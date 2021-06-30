@@ -23,3 +23,14 @@ func InSlice(s []string, str string) bool {
 
 	return false
 }
+
+// InSlicePrefix 检查字符串前缀是否在列表中？
+func InSlicePrefix(s []string, prefix string) bool {
+	for _, v := range s {
+		if strings.HasPrefix(v, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
