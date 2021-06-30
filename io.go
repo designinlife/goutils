@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
-	"github.com/dustin/go-humanize"
 	"github.com/pkg/errors"
 	"hash"
 	"io"
@@ -168,42 +167,4 @@ func IsDir(dirname string) bool {
 	}
 
 	return info.IsDir()
-}
-
-// WriteCounter counts the number of bytes written to it. It implements to the io.Writer interface
-// and we can pass this into io.TeeReader() which will report progress on each write cycle.
-type WriteCounter struct {
-	LoadedBytes        uint64
-	TotalBytes         uint64
-	ProgressBar        bool
-	OnlyShowPercentage bool
-}
-
-func (w *WriteCounter) Write(p []byte) (int, error) {
-	n := len(p)
-	w.LoadedBytes += uint64(n)
-
-	if w.ProgressBar {
-		w.PrintProgress()
-	}
-
-	return n, nil
-}
-
-func (w WriteCounter) PrintProgress() {
-	// Clear the line by using a character return to go back to the start and remove
-	// the remaining characters by filling it with spaces
-	// fmt.Printf("\r%s", strings.Repeat(" ", 35))
-
-	// Return again and print current status of download
-	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
-	if w.TotalBytes > 0 {
-		if w.OnlyShowPercentage {
-			fmt.Printf("\r%.2f%%", float64(w.LoadedBytes)*100.00/float64(w.TotalBytes))
-		} else {
-			fmt.Printf("\rDownloading... %s of %s complete", humanize.Bytes(w.LoadedBytes), humanize.Bytes(w.TotalBytes))
-		}
-	} else {
-		fmt.Printf("\rDownloading... %s complete", humanize.Bytes(w.LoadedBytes))
-	}
 }

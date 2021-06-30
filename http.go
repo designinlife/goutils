@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"github.com/pkg/errors"
 	logger "github.com/sirupsen/logrus"
 	"io"
@@ -186,7 +187,7 @@ func (wc *WebClient) doRequest(method, url string, queryParams map[string]string
 			totalSize = uint64(intNum)
 		}
 
-		counter := &WriteCounter{ProgressBar: showProgressBar, TotalBytes: totalSize, OnlyShowPercentage: true}
+		counter := &ProgressBarCounter{ProgressBar: showProgressBar, TotalBytes: totalSize, SimpleBarStyle: true}
 
 		if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
 			out.Close()
@@ -255,4 +256,42 @@ func (wc *WebClient) DownloadFile(url string, filename string, showProgress bool
 	_, err := wc.doRequest("GET", url, nil, nil, nil, 0, filename, showProgress)
 
 	return err
+}
+
+// ProgressBarCounter counts the number of bytes written to it. It implements to the io.Writer interface
+// and we can pass this into io.TeeReader() which will report progress on each write cycle.
+type ProgressBarCounter struct {
+	LoadedBytes    uint64
+	TotalBytes     uint64
+	ProgressBar    bool
+	SimpleBarStyle bool
+}
+
+func (w *ProgressBarCounter) Write(p []byte) (int, error) {
+	n := len(p)
+	w.LoadedBytes += uint64(n)
+
+	if w.ProgressBar {
+		w.PrintProgress()
+	}
+
+	return n, nil
+}
+
+func (w ProgressBarCounter) PrintProgress() {
+	// Clear the line by using a character return to go back to the start and remove
+	// the remaining characters by filling it with spaces
+	// fmt.Printf("\r%s", strings.Repeat(" ", 35))
+
+	// Return again and print current status of download
+	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
+	if w.TotalBytes > 0 {
+		if w.SimpleBarStyle {
+			fmt.Printf("\r%.2f%%", float64(w.LoadedBytes)*100.00/float64(w.TotalBytes))
+		} else {
+			fmt.Printf("\rDownloading... %s of %s complete", humanize.Bytes(w.LoadedBytes), humanize.Bytes(w.TotalBytes))
+		}
+	} else {
+		fmt.Printf("\rDownloading... %s complete", humanize.Bytes(w.LoadedBytes))
+	}
 }
