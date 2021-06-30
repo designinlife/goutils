@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/pkg/errors"
+	logger "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 )
 
 type WebClient struct {
+	Debug          bool
 	Proxy          string
 	Headers        []WebHeader
 	DefaultTimeout time.Duration
@@ -72,7 +74,7 @@ func WithHeaders(headers map[string]string) WebClientOption {
 	}
 }
 
-func (wc *WebClient) Do(method, url string, queryParams map[string]string, formParams url2.Values, jsonData []byte, timeout time.Duration, filename string, showProgressBar bool) ([]byte, error) {
+func (wc *WebClient) doRequest(method, url string, queryParams map[string]string, formParams url2.Values, jsonData []byte, timeout time.Duration, filename string, showProgressBar bool) ([]byte, error) {
 	if queryParams != nil {
 		query := make([]string, 0)
 
@@ -143,6 +145,10 @@ func (wc *WebClient) Do(method, url string, queryParams map[string]string, formP
 		request.Body = ioutil.NopCloser(bytes.NewReader(jsonData))
 	}
 
+	if wc.Debug {
+		logger.Debug(fmt.Sprintf("%s %s", method, url))
+	}
+
 	resp, err = client.Do(request)
 
 	if err != nil {
@@ -210,43 +216,43 @@ func (wc *WebClient) Do(method, url string, queryParams map[string]string, formP
 }
 
 func (wc *WebClient) Get(url string) ([]byte, error) {
-	return wc.Do("GET", url, nil, nil, nil, 0, "", false)
+	return wc.doRequest("GET", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) GetWithQuery(url string, queryParams map[string]string) ([]byte, error) {
-	return wc.Do("GET", url, queryParams, nil, nil, 0, "", false)
+	return wc.doRequest("GET", url, queryParams, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Head(url string) ([]byte, error) {
-	return wc.Do("HEAD", url, nil, nil, nil, 0, "", false)
+	return wc.doRequest("HEAD", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Post(url string, formParams url2.Values) ([]byte, error) {
-	return wc.Do("POST", url, nil, formParams, nil, 0, "", false)
+	return wc.doRequest("POST", url, nil, formParams, nil, 0, "", false)
 }
 
 func (wc *WebClient) PostWithJSON(url string, jsonData []byte) ([]byte, error) {
-	return wc.Do("POST", url, nil, nil, jsonData, 0, "", false)
+	return wc.doRequest("POST", url, nil, nil, jsonData, 0, "", false)
 }
 
 func (wc *WebClient) Put(url string) ([]byte, error) {
-	return wc.Do("PUT", url, nil, nil, nil, 0, "", false)
+	return wc.doRequest("PUT", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Delete(url string) ([]byte, error) {
-	return wc.Do("DELETE", url, nil, nil, nil, 0, "", false)
+	return wc.doRequest("DELETE", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Options(url string) ([]byte, error) {
-	return wc.Do("OPTIONS", url, nil, nil, nil, 0, "", false)
+	return wc.doRequest("OPTIONS", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Patch(url string) ([]byte, error) {
-	return wc.Do("PATCH", url, nil, nil, nil, 0, "", false)
+	return wc.doRequest("PATCH", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) DownloadFile(url string, filename string, showProgress bool) error {
-	_, err := wc.Do("GET", url, nil, nil, nil, 0, filename, showProgress)
+	_, err := wc.doRequest("GET", url, nil, nil, nil, 0, filename, showProgress)
 
 	return err
 }
