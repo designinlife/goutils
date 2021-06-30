@@ -33,7 +33,6 @@ func main() {
 // write as it downloads and not load the whole file into memory. We pass an io.TeeReader
 // into Copy() to report progress on the download.
 func DownloadFile(filepath string, url string) error {
-
     // Create the file, but give it a tmp file extension, this means we won't overwrite a
     // file until it's downloaded, but we'll remove the tmp extension once downloaded.
     out, err := os.Create(filepath + ".tmp")
