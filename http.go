@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	url2 "net/url"
@@ -141,6 +142,10 @@ func (wc *WebClient) Do(method, url string, queryParams map[string]string, formP
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
+
+	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+		return body, errors.New(fmt.Sprintf("检测到非 200 响应状态码。(StatusCode: %d)", resp.StatusCode))
+	}
 
 	return body, nil
 }
