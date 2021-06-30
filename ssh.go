@@ -6,7 +6,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"github.com/pkg/sftp"
-	logger "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
@@ -167,7 +166,7 @@ func (s *SSHClient) Upload(src, dst string) error {
 		n, err := srcFile.Read(buf)
 		if err != nil {
 			if err != io.EOF {
-				logger.Fatalln("error occurred:", err)
+				return err
 			} else {
 				break
 			}
