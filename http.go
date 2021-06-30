@@ -159,7 +159,7 @@ func (wc *WebClient) doRequest(method, url string, queryParams map[string]string
 
 	if filename != "" {
 		if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-			return nil, errors.New(fmt.Sprintf("检测到非 200 响应状态码。(StatusCode: %d)", resp.StatusCode))
+			return nil, errors.New(fmt.Sprintf("A non-200 response status code was detected. (StatusCode: %d)", resp.StatusCode))
 		}
 
 		dirn := filepath.Dir(filename)

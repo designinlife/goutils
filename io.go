@@ -18,10 +18,10 @@ import (
 func RemoveAnySafe(s string) error {
 	// 保护系统根路径
 	if InSlice([]string{"/", "/bin", "/boot", "/data", "/dev", "/etc", "/home", "/lib", "/lib64", "/media", "/mnt", "/opt", "/proc", "/root", "/run", "/sbin", "/srv", "/sys", "/tmp", "/usr", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", "/usr/local/etc", "/var"}, s) {
-		return errors.New(fmt.Sprintf("不允许删除系统路径。（%s）", s))
+		return errors.New(fmt.Sprintf("It is strictly forbidden to delete the protected path. (%s)", s))
 	}
 	if InSlicePrefix([]string{"/bin", "/usr/bin", "/usr/sbin", "/etc", "/dev", "/lib", "/lib64", "/media", "/boot", "/proc", "/sbin", "/sys"}, s) {
-		return errors.New(fmt.Sprintf("不允许删除此前缀的系统路径。（%s）", s))
+		return errors.New(fmt.Sprintf("It is strictly forbidden to delete the protected path. (%s)", s))
 	}
 
 	err := os.RemoveAll(s)
@@ -36,7 +36,7 @@ func RemoveAnySafe(s string) error {
 // RemoveContents 移除目录下的所有文件及子目录。（不包含目录自身）
 func RemoveContents(dir string) error {
 	if !IsDir(dir) {
-		return errors.New(fmt.Sprintf("参数必须是一个目录路径。(%s)", dir))
+		return errors.New(fmt.Sprintf("The parameter must be a directory. (%s)", dir))
 	}
 
 	d, err := os.Open(dir)
@@ -98,7 +98,7 @@ func VerifySum(filename, checksum string, algorithm HashAlgorithm) bool {
 // CheckSum 计算文件哈希校验码。
 func CheckSum(filename string, algorithm HashAlgorithm, capital bool) (string, error) {
 	if !IsFile(filename) {
-		return "", errors.New(fmt.Sprintf("文件不存在。(%s)", filename))
+		return "", errors.New(fmt.Sprintf("File not found. (%s)", filename))
 	}
 
 	f, err := os.Open(filename)
@@ -125,7 +125,7 @@ func CheckSum(filename string, algorithm HashAlgorithm, capital bool) (string, e
 	case "sha512", "SHA512":
 		h = sha512.New()
 	default:
-		return "", errors.New(fmt.Sprintf("不支持的 Hash (%s) 算法。", algorithm))
+		return "", errors.New(fmt.Sprintf("Unsupported hash algorithm. (%s)", algorithm))
 	}
 
 	if _, err := io.Copy(h, f); err != nil {
