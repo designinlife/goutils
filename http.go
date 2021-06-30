@@ -10,7 +10,6 @@ import (
 
 type WebClient struct {
 	Proxy          string
-	ViaProxy       bool
 	Headers        []WebHeader
 	DefaultTimeout time.Duration
 }
@@ -20,13 +19,42 @@ type WebHeader struct {
 	Value string
 }
 
-func NewWebClient() *WebClient {
+type WebClientOption func(*WebClient)
+
+func NewHTTPClient() *WebClient {
 	return &WebClient{}
 }
 
-func NewWebClientWithTimeout(timeout time.Duration) *WebClient {
+func NewHTTPClientWithTimeout(timeout time.Duration) *WebClient {
 	return &WebClient{
 		DefaultTimeout: timeout,
+	}
+}
+
+func NewHTTPClientWithOptions(opts ...WebClientOption) *WebClient {
+	wc := &WebClient{}
+
+	for _, opt := range opts {
+		opt(wc)
+	}
+
+	return wc
+}
+
+func WithProxy(proxyUrl string) WebClientOption {
+	return func(wc *WebClient) {
+		wc.Proxy = proxyUrl
+	}
+}
+
+func WithHeaders(headers map[string]string) WebClientOption {
+	return func(wc *WebClient) {
+		for k, v := range headers {
+			wc.Headers = append(wc.Headers, WebHeader{
+				Name:  k,
+				Value: v,
+			})
+		}
 	}
 }
 
@@ -50,7 +78,7 @@ func (wc *WebClient) Do(method, url string, timeout time.Duration) ([]byte, erro
 
 	var client *http.Client
 
-	if wc.Proxy != "" && wc.ViaProxy {
+	if wc.Proxy != "" {
 		proxy, _ := url2.Parse(wc.Proxy)
 
 		tr := &http.Transport{
