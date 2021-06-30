@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 )
 
-// RemoveAny 移除任意文件或目录。（当传入的参数是系统保护路径时会报错！）
-func RemoveAny(s string) error {
+// RemoveAnySafe 移除任意文件或目录。（当传入的参数是系统保护路径时会报错！）
+func RemoveAnySafe(s string) error {
 	// 保护系统根路径
 	if InSlice([]string{"/", "/bin", "/boot", "/data", "/dev", "/etc", "/home", "/lib", "/lib64", "/media", "/mnt", "/opt", "/proc", "/root", "/run", "/sbin", "/srv", "/sys", "/tmp", "/usr", "/usr/bin", "/usr/sbin", "/usr/local/bin", "/usr/local/sbin", "/usr/local/etc", "/var"}, s) {
 		return errors.New(fmt.Sprintf("不允许删除系统路径。（%s）", s))
