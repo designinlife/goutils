@@ -2,5 +2,5 @@
 
 ## v1.0.3
 
-* Add functions: VerifySum
+* Add functions: VerifySum, RemoveAllSafe
 * Code optimization.
