@@ -1,10 +1,13 @@
 package goutils
 
 import (
+	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	url2 "net/url"
+	"strings"
 	"time"
 )
 
@@ -58,7 +61,21 @@ func WithHeaders(headers map[string]string) WebClientOption {
 	}
 }
 
-func (wc *WebClient) Do(method, url string, timeout time.Duration) ([]byte, error) {
+func (wc *WebClient) Do(method, url string, queryParams map[string]string, formParams url2.Values, jsonData []byte, timeout time.Duration) ([]byte, error) {
+	if queryParams != nil {
+		query := make([]string, 0)
+
+		for k, v := range queryParams {
+			query = append(query, fmt.Sprintf("%s=%s", k, url2.QueryEscape(v)))
+		}
+
+		if strings.Contains(url, "?") {
+			url = url + "&" + strings.Join(query, "&")
+		} else {
+			url = url + "?" + strings.Join(query, "&")
+		}
+	}
+
 	request, _ := http.NewRequest(method, url, nil)
 
 	request.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
@@ -98,7 +115,24 @@ func (wc *WebClient) Do(method, url string, timeout time.Duration) ([]byte, erro
 		}
 	}
 
-	resp, err := client.Do(request)
+	var resp *http.Response
+	var err error
+
+	switch method {
+	case "POST":
+		if formParams != nil {
+			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			request.PostForm = formParams
+		}
+		break
+	}
+
+	if jsonData != nil {
+		request.Header.Set("Content-Type", "application/json")
+		request.Body = ioutil.NopCloser(bytes.NewReader(jsonData))
+	}
+
+	resp, err = client.Do(request)
 
 	if err != nil {
 		return nil, err
@@ -112,29 +146,37 @@ func (wc *WebClient) Do(method, url string, timeout time.Duration) ([]byte, erro
 }
 
 func (wc *WebClient) Get(url string) ([]byte, error) {
-	return wc.Do("GET", url, 0)
+	return wc.Do("GET", url, nil, nil, nil, 0)
+}
+
+func (wc *WebClient) GetWithQuery(url string, queryParams map[string]string) ([]byte, error) {
+	return wc.Do("GET", url, queryParams, nil, nil, 0)
 }
 
 func (wc *WebClient) Head(url string) ([]byte, error) {
-	return wc.Do("HEAD", url, 0)
+	return wc.Do("HEAD", url, nil, nil, nil, 0)
 }
 
-func (wc *WebClient) Post(url string) ([]byte, error) {
-	return wc.Do("POST", url, 0)
+func (wc *WebClient) Post(url string, formParams url2.Values) ([]byte, error) {
+	return wc.Do("POST", url, nil, formParams, nil, 0)
+}
+
+func (wc *WebClient) PostWithJSON(url string, jsonData []byte) ([]byte, error) {
+	return wc.Do("POST", url, nil, nil, jsonData, 0)
 }
 
 func (wc *WebClient) Put(url string) ([]byte, error) {
-	return wc.Do("PUT", url, 0)
+	return wc.Do("PUT", url, nil, nil, nil, 0)
 }
 
 func (wc *WebClient) Delete(url string) ([]byte, error) {
-	return wc.Do("DELETE", url, 0)
+	return wc.Do("DELETE", url, nil, nil, nil, 0)
 }
 
 func (wc *WebClient) Options(url string) ([]byte, error) {
-	return wc.Do("OPTIONS", url, 0)
+	return wc.Do("OPTIONS", url, nil, nil, nil, 0)
 }
 
 func (wc *WebClient) Patch(url string) ([]byte, error) {
-	return wc.Do("PATCH", url, 0)
+	return wc.Do("PATCH", url, nil, nil, nil, 0)
 }
