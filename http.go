@@ -77,16 +77,16 @@ func WithHeaders(headers map[string]string) WebClientOption {
 
 func (wc *WebClient) doRequest(method, url string, queryParams map[string]string, formParams url2.Values, jsonData []byte, timeout time.Duration, filename string, showProgressBar bool) ([]byte, error) {
 	if queryParams != nil {
-		query := make([]string, 0)
+		q := url2.Values{}
 
 		for k, v := range queryParams {
-			query = append(query, fmt.Sprintf("%s=%s", k, url2.QueryEscape(v)))
+			q.Add(k, v)
 		}
 
 		if strings.Contains(url, "?") {
-			url = url + "&" + strings.Join(query, "&")
+			url = url + "&" + q.Encode()
 		} else {
-			url = url + "?" + strings.Join(query, "&")
+			url = url + "?" + q.Encode()
 		}
 	}
 
@@ -207,7 +207,7 @@ func (wc *WebClient) doRequest(method, url string, queryParams map[string]string
 		body, _ := ioutil.ReadAll(resp.Body)
 
 		if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-			return body, errors.New(fmt.Sprintf("检测到非 200 响应状态码。(StatusCode: %d)", resp.StatusCode))
+			return body, errors.New(fmt.Sprintf("A non-200 response status code was detected. (StatusCode: %d)", resp.StatusCode))
 		}
 
 		return body, nil
