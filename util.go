@@ -12,3 +12,14 @@ func Substitute(source string, replacements map[string]string) string {
 
 	return source
 }
+
+// InSlice 检查字符串是否在列表中？
+func InSlice(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}

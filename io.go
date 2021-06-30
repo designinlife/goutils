@@ -13,6 +13,22 @@ import (
 	"path/filepath"
 )
 
+// RemoveAny 移除任意文件或目录。（当传入的参数是系统保护路径时会报错！）
+func RemoveAny(s string) error {
+	// 保护系统根路径
+	if InSlice([]string{"/", "/bin", "/boot", "/data", "/dev", "/etc", "/home", "/lib", "/lib64", "/media", "/mnt", "/opt", "/proc", "/root", "/run", "/sbin", "/srv", "/sys", "/tmp", "/usr", "/var"}, s) {
+		return errors.New(fmt.Sprintf("不允许删除系统路径。（%s）", s))
+	}
+
+	err := os.RemoveAll(s)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // RemoveContents 移除目录下的所有文件及子目录。（不包含目录自身）
 func RemoveContents(dir string) error {
 	if !IsDir(dir) {
