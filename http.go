@@ -5,9 +5,13 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	url2 "net/url"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -62,7 +66,7 @@ func WithHeaders(headers map[string]string) WebClientOption {
 	}
 }
 
-func (wc *WebClient) Do(method, url string, queryParams map[string]string, formParams url2.Values, jsonData []byte, timeout time.Duration) ([]byte, error) {
+func (wc *WebClient) Do(method, url string, queryParams map[string]string, formParams url2.Values, jsonData []byte, timeout time.Duration, filename string, showProgressBar bool) ([]byte, error) {
 	if queryParams != nil {
 		query := make([]string, 0)
 
@@ -141,47 +145,100 @@ func (wc *WebClient) Do(method, url string, queryParams map[string]string, formP
 
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	if filename != "" {
+		if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+			return nil, errors.New(fmt.Sprintf("检测到非 200 响应状态码。(StatusCode: %d)", resp.StatusCode))
+		}
 
-	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-		return body, errors.New(fmt.Sprintf("检测到非 200 响应状态码。(StatusCode: %d)", resp.StatusCode))
+		dirn := filepath.Dir(filename)
+
+		if !IsDir(dirn) {
+			os.MkdirAll(dirn, 0755)
+		}
+
+		out, err := os.Create(filename + ".tmp")
+		if err != nil {
+			return nil, err
+		}
+
+		// 此处不能使用 defer 方式关闭 out 资源，因为在 os.Rename 时资源句柄未释放造成重命名出错！
+		// defer out.Close()
+
+		var totalSize uint64
+
+		totalSize = 0
+		contentSize := resp.Header.Get("Content-Length")
+
+		if contentSize != "" {
+			intNum, _ := strconv.Atoi(contentSize)
+			totalSize = uint64(intNum)
+		}
+
+		counter := &WriteCounter{ProgressBar: showProgressBar, TotalBytes: totalSize, OnlyShowPercentage: true}
+
+		if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
+			out.Close()
+			return nil, err
+		}
+
+		out.Close()
+
+		if showProgressBar {
+			fmt.Print("\n")
+		}
+
+		if err = os.Rename(filename+".tmp", filename); err != nil {
+			return nil, err
+		}
+	} else {
+		body, _ := ioutil.ReadAll(resp.Body)
+
+		if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+			return body, errors.New(fmt.Sprintf("检测到非 200 响应状态码。(StatusCode: %d)", resp.StatusCode))
+		}
 	}
 
-	return body, nil
+	return nil, nil
 }
 
 func (wc *WebClient) Get(url string) ([]byte, error) {
-	return wc.Do("GET", url, nil, nil, nil, 0)
+	return wc.Do("GET", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) GetWithQuery(url string, queryParams map[string]string) ([]byte, error) {
-	return wc.Do("GET", url, queryParams, nil, nil, 0)
+	return wc.Do("GET", url, queryParams, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Head(url string) ([]byte, error) {
-	return wc.Do("HEAD", url, nil, nil, nil, 0)
+	return wc.Do("HEAD", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Post(url string, formParams url2.Values) ([]byte, error) {
-	return wc.Do("POST", url, nil, formParams, nil, 0)
+	return wc.Do("POST", url, nil, formParams, nil, 0, "", false)
 }
 
 func (wc *WebClient) PostWithJSON(url string, jsonData []byte) ([]byte, error) {
-	return wc.Do("POST", url, nil, nil, jsonData, 0)
+	return wc.Do("POST", url, nil, nil, jsonData, 0, "", false)
 }
 
 func (wc *WebClient) Put(url string) ([]byte, error) {
-	return wc.Do("PUT", url, nil, nil, nil, 0)
+	return wc.Do("PUT", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Delete(url string) ([]byte, error) {
-	return wc.Do("DELETE", url, nil, nil, nil, 0)
+	return wc.Do("DELETE", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Options(url string) ([]byte, error) {
-	return wc.Do("OPTIONS", url, nil, nil, nil, 0)
+	return wc.Do("OPTIONS", url, nil, nil, nil, 0, "", false)
 }
 
 func (wc *WebClient) Patch(url string) ([]byte, error) {
-	return wc.Do("PATCH", url, nil, nil, nil, 0)
+	return wc.Do("PATCH", url, nil, nil, nil, 0, "", false)
+}
+
+func (wc *WebClient) DownloadFile(url string, filename string, showProgress bool) error {
+	_, err := wc.Do("GET", url, nil, nil, nil, 0, filename, showProgress)
+
+	return err
 }
