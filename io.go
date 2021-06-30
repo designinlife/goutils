@@ -78,7 +78,7 @@ func RemoveGlob(path string) (err error) {
 }
 
 // CheckSum 计算文件哈希校验码。
-func CheckSum(filename string, algorithm string) (string, error) {
+func CheckSum(filename string, algorithm HashAlgorithm, capital bool) (string, error) {
 	f, err := os.Open(filename)
 
 	if err != nil {
@@ -110,6 +110,10 @@ func CheckSum(filename string, algorithm string) (string, error) {
 		return "", err
 	}
 	sum := h.Sum(nil)
+
+	if capital {
+		return fmt.Sprintf("%X", sum), nil
+	}
 
 	return fmt.Sprintf("%x", sum), nil
 }

@@ -10,34 +10,45 @@ import (
 	"hash"
 )
 
+type HashAlgorithm string
+
+const (
+	Md5    HashAlgorithm = "md5"
+	Sha1   HashAlgorithm = "sha1"
+	Sha224 HashAlgorithm = "sha224"
+	Sha256 HashAlgorithm = "sha256"
+	Sha384 HashAlgorithm = "sha384"
+	Sha512 HashAlgorithm = "sha512"
+)
+
 func MD5(s string) string {
-	return Hash(s, "md5", false)
+	return Hash(s, Md5, false)
 }
 
 func SHA1(s string) string {
-	return Hash(s, "sha1", false)
+	return Hash(s, Sha1, false)
 }
 
 func SHA2(s string) string {
-	return Hash(s, "sha224", false)
+	return Hash(s, Sha224, false)
 }
 
 func SHA256(s string) string {
-	return Hash(s, "sha256", false)
+	return Hash(s, Sha256, false)
 }
 
 func SHA3(s string) string {
-	return Hash(s, "sha384", false)
+	return Hash(s, Sha384, false)
 }
 
 func SHA512(s string) string {
-	return Hash(s, "sha512", false)
+	return Hash(s, Sha512, false)
 }
 
-func Hash(s string, hashName string, capital bool) string {
+func Hash(s string, algorithm HashAlgorithm, capital bool) string {
 	var h hash.Hash
 
-	switch hashName {
+	switch algorithm {
 	case "md5", "MD5":
 		h = md5.New()
 	case "sha1", "SHA1":
@@ -64,33 +75,33 @@ func Hash(s string, hashName string, capital bool) string {
 }
 
 func HMD5(s, key string) string {
-	return HMAC(s, key, "md5", false)
+	return HMAC(s, key, Md5, false)
 }
 
 func HSHA1(s, key string) string {
-	return HMAC(s, key, "sha1", false)
+	return HMAC(s, key, Sha1, false)
 }
 
 func HSHA2(s, key string) string {
-	return HMAC(s, key, "sha224", false)
+	return HMAC(s, key, Sha224, false)
 }
 
 func HSHA256(s, key string) string {
-	return HMAC(s, key, "sha256", false)
+	return HMAC(s, key, Sha256, false)
 }
 
 func HSHA3(s, key string) string {
-	return HMAC(s, key, "sha384", false)
+	return HMAC(s, key, Sha384, false)
 }
 
 func HSHA512(s, key string) string {
-	return HMAC(s, key, "sha512", false)
+	return HMAC(s, key, Sha512, false)
 }
 
-func HMAC(str, key string, hashName string, capital bool) string {
+func HMAC(str, key string, algorithm HashAlgorithm, capital bool) string {
 	var h hash.Hash
 
-	switch hashName {
+	switch algorithm {
 	case "md5", "MD5":
 		h = hmac.New(md5.New, []byte(key))
 	case "sha1", "SHA1":
