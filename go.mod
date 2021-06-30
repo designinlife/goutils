@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/dustin/go-humanize v1.0.0
+	github.com/mattn/go-isatty v0.0.13
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.1

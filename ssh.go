@@ -3,9 +3,11 @@ package goutils
 import (
 	"bufio"
 	"fmt"
+	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"github.com/pkg/sftp"
+	logger "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
@@ -161,7 +163,19 @@ func (s *SSHClient) Upload(src, dst string) error {
 	}
 	defer srcFile.Close()
 
-	buf := make([]byte, 1024)
+	fileInfo, err := srcFile.Stat()
+
+	if err != nil {
+		return err
+	}
+
+	totalByteCount := fileInfo.Size()
+	readByteCount := 0
+
+	buf := make([]byte, 8192)
+
+	isTty := isatty.IsTerminal(os.Stdout.Fd())
+
 	for {
 		n, err := srcFile.Read(buf)
 		if err != nil {
@@ -171,7 +185,18 @@ func (s *SSHClient) Upload(src, dst string) error {
 				break
 			}
 		}
+
+		readByteCount = readByteCount + n
+
 		_, _ = dstFile.Write(buf[:n])
+
+		if isTty {
+			fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
+		}
+	}
+
+	if isTty {
+		logger.Infof("Uploaded. (%s -> %s)", src, dst)
 	}
 
 	// s.Run(fmt.Sprintf("ls -lh %s", dst))
