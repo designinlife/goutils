@@ -76,6 +76,25 @@ func RemoveGlob(path string) (err error) {
 	return
 }
 
+// VerifySum 校验文件哈希值。
+func VerifySum(filename, checksum string, algorithm HashAlgorithm) bool {
+	if !IsFile(filename) {
+		return false
+	}
+
+	code, err := CheckSum(filename, algorithm, false)
+
+	if err != nil {
+		return false
+	}
+
+	if code == checksum {
+		return true
+	}
+
+	return false
+}
+
 // CheckSum 计算文件哈希校验码。
 func CheckSum(filename string, algorithm HashAlgorithm, capital bool) (string, error) {
 	if !IsFile(filename) {
