@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestWebClient_Get(t *testing.T) {
@@ -20,8 +21,9 @@ func TestWebClient_Get(t *testing.T) {
 }
 
 func TestWebClient_DownloadFile(t *testing.T) {
-	client := NewHTTPClient()
-	err := client.DownloadFile("https://www.php.net/distributions/php-8.0.7.tar.gz", filepath.Join(os.TempDir(), "/php-8.0.7.tar.gz"), true)
+	// client := NewHTTPClient()
+	client := NewHTTPClientWithOptions(WithProxy("http://127.0.0.1:3128"), WithTimeout(300*time.Second))
+	err := client.DownloadFile("https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe", filepath.Join(os.TempDir(), "/python-3.9.6-amd64.exe"), true)
 
 	if err != nil {
 		t.Errorf("Download errors. (%v)", err)

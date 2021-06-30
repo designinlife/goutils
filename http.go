@@ -55,6 +55,12 @@ func WithProxy(proxyUrl string) WebClientOption {
 	}
 }
 
+func WithTimeout(timeout time.Duration) WebClientOption {
+	return func(wc *WebClient) {
+		wc.DefaultTimeout = timeout
+	}
+}
+
 func WithHeaders(headers map[string]string) WebClientOption {
 	return func(wc *WebClient) {
 		for k, v := range headers {
