@@ -52,19 +52,19 @@ func NewHTTPClientWithOptions(opts ...WebClientOption) *WebClient {
 	return wc
 }
 
-func WithProxy(proxyUrl string) WebClientOption {
+func HTTPOptionWithProxy(proxyUrl string) WebClientOption {
 	return func(wc *WebClient) {
 		wc.Proxy = proxyUrl
 	}
 }
 
-func WithTimeout(timeout time.Duration) WebClientOption {
+func HTTPOptionWithTimeout(timeout time.Duration) WebClientOption {
 	return func(wc *WebClient) {
 		wc.DefaultTimeout = timeout
 	}
 }
 
-func WithHeaders(headers map[string]string) WebClientOption {
+func HTTPOptionWithHeaders(headers map[string]string) WebClientOption {
 	return func(wc *WebClient) {
 		for k, v := range headers {
 			wc.Headers = append(wc.Headers, WebHeader{

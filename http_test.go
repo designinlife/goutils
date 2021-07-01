@@ -22,7 +22,7 @@ func TestWebClient_Get(t *testing.T) {
 
 func TestWebClient_DownloadFile(t *testing.T) {
 	// client := NewHTTPClient()
-	client := NewHTTPClientWithOptions(WithProxy("http://127.0.0.1:3128"), WithTimeout(300*time.Second))
+	client := NewHTTPClientWithOptions(HTTPOptionWithProxy("http://127.0.0.1:3128"), HTTPOptionWithTimeout(300*time.Second))
 	err := client.DownloadFile("https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe", filepath.Join(os.TempDir(), "/python-3.9.6-amd64.exe"), true)
 
 	if err != nil {
