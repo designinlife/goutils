@@ -9,9 +9,12 @@ import (
 	"github.com/pkg/sftp"
 	logger "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/net/proxy"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
+	"time"
 )
 
 // SSHClient SSH 客户端
@@ -30,16 +33,68 @@ type SSHClient struct {
 	Connected bool
 	// SSH 客户端实例
 	Client *ssh.Client
+	// 代理服务器地址 (支持 http,https,socks5,socks5h, 例如: http://127.0.0.1:3128, socks5://127.0.0.1:1080)
+	Proxy string
+	// 超时时间 (默认不超时)
+	Timeout time.Duration
 }
 
-func NewSSHClient(host string, port int, user string, privateKey string, quiet bool) *SSHClient {
-	return &SSHClient{
+type SSHClientOption func(*SSHClient)
+
+// SSHOptionWithProxy 支持 http/https/socks5/socks5h 代理协议。
+func SSHOptionWithProxy(proxyUrl string) SSHClientOption {
+	return func(c *SSHClient) {
+		c.Proxy = proxyUrl
+	}
+}
+
+func SSHOptionWithTimeout(timeout time.Duration) SSHClientOption {
+	return func(c *SSHClient) {
+		c.Timeout = timeout
+	}
+}
+
+func NewSSHClient(host string, port int, user string, privateKey string, quiet bool, opts ...SSHClientOption) *SSHClient {
+	c := &SSHClient{
 		Host:       host,
 		Port:       port,
 		User:       user,
 		PrivateKey: privateKey,
 		Quiet:      quiet,
 	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
+}
+
+func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
+	// dialer, err := proxy.SOCKS5("tcp", proxyAddress, nil, proxy.Direct)
+	proxyUrl, err := url.Parse(proxyAddress)
+
+	if err != nil {
+		return nil, err
+	}
+
+	dialer, err := proxy.FromURL(proxyUrl, proxy.Direct)
+
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := dialer.Dial("tcp", sshServerAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	c, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return ssh.NewClient(c, chans, reqs), nil
 }
 
 func (s *SSHClient) Connect() error {
@@ -70,9 +125,16 @@ func (s *SSHClient) Connect() error {
 			},
 			// HostKeyCallback: ssh.FixedHostKey(hostKey),
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         s.Timeout,
 		}
 
-		client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), config)
+		var client *ssh.Client
+
+		if s.Proxy != "" {
+			client, err = newSSHClientWithProxy(s.Proxy, fmt.Sprintf("%s:%d", s.Host, s.Port), config)
+		} else {
+			client, err = ssh.Dial("tcp", fmt.Sprintf("%s:%d", s.Host, s.Port), config)
+		}
 
 		if err != nil {
 			return errors.Wrapf(err, "Unable to connect %s:%d.", s.Host, s.Port)
