@@ -85,18 +85,18 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 		return 1, err
 	}
 
-	if !s.Option.Quiet {
-		var scanner *bufio.Scanner
+	var scanner *bufio.Scanner
 
-		if w != nil {
-			scanner = bufio.NewScanner(io.TeeReader(io.MultiReader(stdout, stderr), w))
-		} else {
-			scanner = bufio.NewScanner(io.MultiReader(stdout, stderr))
-		}
-		// scanner.Split(bufio.ScanWords)
-		for scanner.Scan() {
-			m := scanner.Text()
+	if w != nil {
+		scanner = bufio.NewScanner(io.TeeReader(io.MultiReader(stdout, stderr), w))
+	} else {
+		scanner = bufio.NewScanner(io.MultiReader(stdout, stderr))
+	}
+	// scanner.Split(bufio.ScanWords)
+	for scanner.Scan() {
+		m := scanner.Text()
 
+		if !s.Option.Quiet {
 			logger.Info(m)
 		}
 	}
