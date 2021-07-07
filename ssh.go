@@ -39,6 +39,8 @@ type SSHClient struct {
 	Timeout time.Duration
 	// 开启 TTY 终端模式
 	TTY bool
+	// 缓冲区大小 (默认: 8192 bytes)
+	ChunkSize uint16
 }
 
 type SSHClientOption func(*SSHClient)
@@ -56,6 +58,12 @@ func SSHOptionWithTimeout(timeout time.Duration) SSHClientOption {
 	}
 }
 
+func SSHOptionWithChunkSize(chunkSize uint16) SSHClientOption {
+	return func(c *SSHClient) {
+		c.ChunkSize = chunkSize
+	}
+}
+
 func NewSSHClient(host string, port int, user string, privateKey string, quiet bool, opts ...SSHClientOption) *SSHClient {
 	c := &SSHClient{
 		Host:       host,
@@ -63,6 +71,7 @@ func NewSSHClient(host string, port int, user string, privateKey string, quiet b
 		User:       user,
 		PrivateKey: privateKey,
 		Quiet:      quiet,
+		ChunkSize:  8192,
 	}
 
 	for _, opt := range opts {
@@ -264,7 +273,7 @@ func (s *SSHClient) Upload(src, dst string) error {
 	totalByteCount := fileInfo.Size()
 	readByteCount := 0
 
-	buf := make([]byte, 8192)
+	buf := make([]byte, s.ChunkSize)
 
 	isTty := isatty.IsTerminal(os.Stdout.Fd())
 
@@ -274,6 +283,14 @@ func (s *SSHClient) Upload(src, dst string) error {
 			if err != io.EOF {
 				return err
 			} else {
+				readByteCount = readByteCount + n
+
+				_, _ = dstFile.Write(buf[:n])
+
+				if isTty {
+					fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
+				}
+				// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
 				break
 			}
 		}
@@ -314,14 +331,60 @@ func (s *SSHClient) Download(src, dst string) error {
 	}
 	defer srcFile.Close()
 
+	srcFileInfo, err := srcFile.Stat()
+
+	if err != nil {
+		return err
+	}
+
 	dstFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer dstFile.Close()
 
-	if _, err := srcFile.WriteTo(dstFile); err != nil {
-		return err
+	totalByteCount := srcFileInfo.Size()
+	readByteCount := 0
+
+	fmt.Println(totalByteCount)
+
+	buf := make([]byte, s.ChunkSize)
+
+	isTty := isatty.IsTerminal(os.Stdout.Fd())
+
+	for {
+		n, err := srcFile.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				return err
+			} else {
+				readByteCount = readByteCount + n
+
+				_, _ = dstFile.Write(buf[:n])
+
+				if isTty {
+					fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
+				}
+				// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
+				break
+			}
+		}
+
+		readByteCount = readByteCount + n
+
+		_, _ = dstFile.Write(buf[:n])
+
+		if isTty {
+			fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
+		}
+	}
+
+	// if _, err := srcFile.WriteTo(dstFile); err != nil {
+	// 	return err
+	// }
+
+	if isTty {
+		logger.Infof("Downloaded. (%s -> %s)", src, dst)
 	}
 
 	return nil
