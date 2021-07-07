@@ -37,6 +37,8 @@ type SSHClient struct {
 	Proxy string
 	// 超时时间 (默认不超时)
 	Timeout time.Duration
+	// 开启 TTY 终端模式
+	TTY bool
 }
 
 type SSHClientOption func(*SSHClient)
@@ -165,6 +167,22 @@ func (s *SSHClient) Run(command string) (int, error) {
 	if err != nil {
 		return -2, err
 	}
+
+	if s.TTY {
+		// Set up terminal modes
+		modes := ssh.TerminalModes{
+			ssh.ECHO:          1,
+			ssh.TTY_OP_ISPEED: 14400,
+			ssh.TTY_OP_OSPEED: 14400,
+		}
+
+		err = session.RequestPty("xterm", 24, 80, modes)
+
+		if err != nil {
+			return -2, errors.Wrapf(err, "Failed to set tty. (%s:%d)", s.Host, s.Port)
+		}
+	}
+
 	defer session.Close()
 
 	stderr, _ := session.StderrPipe()
