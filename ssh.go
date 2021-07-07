@@ -158,6 +158,10 @@ func (s *SSHClient) Close() error {
 }
 
 func (s *SSHClient) Run(command string) (int, error) {
+	return s.RunWithWriter(command, nil)
+}
+
+func (s *SSHClient) RunWithWriter(command string, w io.Writer) (int, error) {
 	err := s.Connect()
 	if err != nil {
 		return -1, err
@@ -192,11 +196,18 @@ func (s *SSHClient) Run(command string) (int, error) {
 		return -3, err
 	}
 
-	if !s.Quiet {
-		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
-		for scanner.Scan() {
-			m := scanner.Text()
+	var scanner *bufio.Scanner
 
+	if w != nil {
+		scanner = bufio.NewScanner(io.TeeReader(io.MultiReader(stdout, stderr), w))
+	} else {
+		scanner = bufio.NewScanner(io.MultiReader(stdout, stderr))
+	}
+
+	for scanner.Scan() {
+		m := scanner.Text()
+
+		if !s.Quiet {
 			logger.Info(m)
 		}
 	}
