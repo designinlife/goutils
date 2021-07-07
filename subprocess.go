@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	logger "github.com/sirupsen/logrus"
 	"io"
 	"os/exec"
 	"strings"
@@ -85,7 +86,8 @@ func (s *SubProcess) Run() (int, error) {
 		// scanner.Split(bufio.ScanWords)
 		for scanner.Scan() {
 			m := scanner.Text()
-			fmt.Println(m)
+
+			logger.Info(m)
 		}
 	}
 

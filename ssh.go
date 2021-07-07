@@ -196,7 +196,8 @@ func (s *SSHClient) Run(command string) (int, error) {
 		scanner := bufio.NewScanner(io.MultiReader(stdout, stderr))
 		for scanner.Scan() {
 			m := scanner.Text()
-			fmt.Println(m)
+
+			logger.Info(m)
 		}
 	}
 
