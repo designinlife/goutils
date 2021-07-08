@@ -75,6 +75,32 @@ func RemoveGlob(path string) (err error) {
 	return
 }
 
+// CopyFile 拷贝文件。
+func CopyFile(src, dst string) (int64, error) {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return 0, err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return 0, fmt.Errorf("%s is not a regular file", src)
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer destination.Close()
+	nBytes, err := io.Copy(destination, source)
+	return nBytes, err
+}
+
 // VerifySum 校验文件哈希值。
 func VerifySum(filename, checksum string, algorithm HashAlgorithm) bool {
 	if !IsFile(filename) {
