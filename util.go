@@ -36,6 +36,16 @@ func InSlicePrefix(s []string, prefix string) bool {
 	return false
 }
 
+// RemovePathSeparatorPrefix 移除开头的 /,\ 字符。
+func RemovePathSeparatorPrefix(s string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(s, "/"), "\\")
+}
+
+// RemovePathSeparatorSuffix 移除尾部的 /,\ 字符。
+func RemovePathSeparatorSuffix(s string) string {
+	return strings.TrimSuffix(strings.TrimSuffix(s, "/"), "\\")
+}
+
 // IsRegularIPv4AndPort 检查字符串是否匹配 IP:Port 模式？
 func IsRegularIPv4AndPort(s string) bool {
 	if ok, _ := regexp.MatchString("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+$", s); ok {
