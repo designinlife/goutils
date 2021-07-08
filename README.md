@@ -4,6 +4,24 @@ Utils for Go dev.
 
 ## Usage
 
+### 生成自签名 CA 证书
+
+`生成证书`
+
+```go
+func main(){
+    ip := []byte("127.0.0.1")
+    alternateDNS := []string{"localhost"}
+    GenerateSelfSignedCertKey("/root", 2048, "192.168.0.1", []net.IP{net.ParseIP(string(ip))}, alternateDNS)
+}
+```
+
+`查看证书`
+
+```bash
+openssl x509 -in ca.crt -noout -text
+```
+
 ### WriteCounter 使用
 
 See <https://golangcode.com/download-a-file-with-progress/>

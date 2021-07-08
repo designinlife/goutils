@@ -181,6 +181,10 @@ func GenerateSelfSignedCertKey(outdir string, keySize int, expire time.Duration,
 		Bytes:   certificate,
 	}
 
+	if !IsDir(outdir) {
+		os.MkdirAll(outdir, 0777)
+	}
+
 	// 5.通过pem编码并写入磁盘文件
 	file, err := os.Create(filepath.Join(outdir, "ca.crt"))
 	if err != nil {
