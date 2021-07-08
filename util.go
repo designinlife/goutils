@@ -1,6 +1,7 @@
 package goutils
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -30,6 +31,15 @@ func InSlicePrefix(s []string, prefix string) bool {
 		if strings.HasPrefix(v, prefix) {
 			return true
 		}
+	}
+
+	return false
+}
+
+// IsRegularIPv4AndPort 检查字符串是否匹配 IP:Port 模式？
+func IsRegularIPv4AndPort(s string) bool {
+	if ok, _ := regexp.MatchString("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+$", s); ok {
+		return true
 	}
 
 	return false
