@@ -1,6 +1,7 @@
 package goutils
 
 import (
+	"archive/zip"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // RemoveAllSafe 移除任意文件或目录。（当传入的参数是系统保护路径时会报错！）
@@ -193,4 +195,44 @@ func IsDir(dirname string) bool {
 	}
 
 	return info.IsDir()
+}
+
+// CompressZipDir 使用 ZIP 格式压缩目录。
+func CompressZipDir(srcdir, dstZipFileName string) error {
+	srcdir = RemovePathSeparatorSuffix(srcdir)
+	destinationFile, err := os.Create(dstZipFileName)
+	if err != nil {
+		return err
+	}
+	myZip := zip.NewWriter(destinationFile)
+	err = filepath.Walk(srcdir, func(filePath string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		relPath := RemovePathSeparatorPrefix(strings.TrimPrefix(filePath, filepath.Dir(srcdir)))
+		zipFile, err := myZip.Create(relPath)
+		if err != nil {
+			return err
+		}
+		fsFile, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(zipFile, fsFile)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	err = myZip.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
