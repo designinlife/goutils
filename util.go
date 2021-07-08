@@ -44,3 +44,21 @@ func IsRegularIPv4AndPort(s string) bool {
 
 	return false
 }
+
+// IsRegularEmailAddress 检查字符串是否匹配电子邮件地址模式？
+func IsRegularEmailAddress(s string) bool {
+	if ok, _ := regexp.MatchString("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$", s); ok {
+		return true
+	}
+
+	return false
+}
+
+// IsRegularPhoneNumber 检查字符串是否匹配电话号码模式？
+func IsRegularPhoneNumber(s string) bool {
+	if ok, _ := regexp.MatchString("^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$", s); ok {
+		return true
+	}
+
+	return false
+}
