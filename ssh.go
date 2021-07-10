@@ -293,7 +293,7 @@ func (s *SSHClient) Upload(src, dst string) error {
 
 				_, _ = dstFile.Write(buf[:n])
 
-				if isTty {
+				if isTty && !s.Quiet {
 					fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
 				}
 				// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
@@ -305,12 +305,12 @@ func (s *SSHClient) Upload(src, dst string) error {
 
 		_, _ = dstFile.Write(buf[:n])
 
-		if isTty {
+		if isTty && !s.Quiet {
 			fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
 		}
 	}
 
-	if isTty {
+	if isTty && !s.Quiet {
 		logger.Infof("Uploaded. (%s -> %s)", src, dst)
 	}
 
@@ -368,7 +368,7 @@ func (s *SSHClient) Download(src, dst string) error {
 
 				_, _ = dstFile.Write(buf[:n])
 
-				if isTty {
+				if isTty && !s.Quiet {
 					fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
 				}
 				// logger.Debugf("readByteCount=%d, n=%d, %v", readByteCount, n, err)
@@ -380,7 +380,7 @@ func (s *SSHClient) Download(src, dst string) error {
 
 		_, _ = dstFile.Write(buf[:n])
 
-		if isTty {
+		if isTty && !s.Quiet {
 			fmt.Printf("\r%.2f%%", float32(readByteCount)*100/float32(totalByteCount))
 		}
 	}
@@ -389,7 +389,7 @@ func (s *SSHClient) Download(src, dst string) error {
 	// 	return err
 	// }
 
-	if isTty {
+	if isTty && !s.Quiet {
 		logger.Infof("Downloaded. (%s -> %s)", src, dst)
 	}
 
