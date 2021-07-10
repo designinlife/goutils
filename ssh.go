@@ -14,12 +14,13 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
 // SSHClient SSH 客户端
 type SSHClient struct {
-	// RSA 私钥证书路径
+	// RSA 私钥证书路径或全文内容
 	PrivateKey string
 	// 主机 Domain/IP 地址
 	Host string
@@ -111,17 +112,22 @@ func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh
 func (s *SSHClient) Connect() error {
 	if !s.Connected {
 		// var hostKey ssh.PublicKey
+		var key []byte
 
-		pkey, err := homedir.Expand(s.PrivateKey)
+		if strings.HasPrefix(s.PrivateKey, "~/") || strings.HasPrefix(s.PrivateKey, "/") {
+			pkey, err := homedir.Expand(s.PrivateKey)
 
-		if err != nil {
-			return errors.Wrapf(err, "Load private key path error.")
-		}
+			if err != nil {
+				return errors.Wrapf(err, "Load private key path error.")
+			}
 
-		key, err := ioutil.ReadFile(pkey)
+			key, err = ioutil.ReadFile(pkey)
 
-		if err != nil {
-			return errors.Wrapf(err, "Unable to read private key: %s", s.PrivateKey)
+			if err != nil {
+				return errors.Wrapf(err, "Unable to read private key: %s", s.PrivateKey)
+			}
+		} else {
+			key = []byte(s.PrivateKey)
 		}
 
 		signer, err := ssh.ParsePrivateKey(key)
