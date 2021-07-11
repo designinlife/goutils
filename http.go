@@ -42,6 +42,14 @@ func (h HttpResponse) String() string {
 	return fmt.Sprintf("%d %s\n%s (%d)\n%s", h.StatusCode, h.RequestURI, h.ContentType, h.ContentLength, string(h.Body))
 }
 
+func (h HttpResponse) ToJson(v interface{}) error {
+	return json.Unmarshal(h.Body, v)
+}
+
+func (h HttpResponse) ToXml(v interface{}) error {
+	return xml.Unmarshal(h.Body, v)
+}
+
 func NewHttpClient() *HttpClient {
 	return &HttpClient{}
 }
@@ -201,13 +209,13 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 		return nil, err
 	}
 
-	defer resp.Body.Close()
-
 	content, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
 		return nil, err
 	}
+
+	resp.Body.Close()
 
 	ret := &HttpResponse{
 		RequestURI:    resp.Request.RequestURI,
