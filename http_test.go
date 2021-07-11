@@ -10,7 +10,9 @@ import (
 
 func TestHttpClient_Get(t *testing.T) {
 	client := NewHttpClient()
-	resp1, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", nil)
+	resp1, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", &HttpRequest{
+		Proxy: "http://127.0.0.1:3128",
+	})
 
 	if err != nil {
 		t.Errorf("Request errors. (%v)", err)
@@ -20,6 +22,7 @@ func TestHttpClient_Get(t *testing.T) {
 
 	resp2, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", &HttpRequest{
 		Proxy: "http://127.0.0.1:3128",
+		Query: map[string]interface{}{"foo3": "bar3", "foo4": "bar4", "custom": "1"},
 	})
 
 	if err != nil {
@@ -32,7 +35,8 @@ func TestHttpClient_Get(t *testing.T) {
 func TestHttpClient_Post(t *testing.T) {
 	client := NewHttpClient()
 	resp, err := client.Post("https://postman-echo.com/post", &HttpRequest{
-		JSON: map[string]interface{}{"foo1": "bar1", "foo2": "bar2", "foo3": "bar3"},
+		FormParams: map[string]interface{}{"foo1": "bar1", "foo2": "bar2", "foo3": "bar3"},
+		Proxy:      "http://127.0.0.1:3128",
 	})
 
 	if err != nil {
@@ -45,7 +49,8 @@ func TestHttpClient_Post(t *testing.T) {
 func TestHttpClient_Put(t *testing.T) {
 	client := NewHttpClient()
 	resp, err := client.Put("https://postman-echo.com/put", &HttpRequest{
-		JSON: map[string]interface{}{"foo1": "bar1", "foo2": "bar2", "foo3": "bar3"},
+		JSON:  map[string]interface{}{"foo1": "bar1", "foo2": "bar2", "foo3": "bar3"},
+		Proxy: "http://127.0.0.1:3128",
 	})
 
 	if err != nil {
