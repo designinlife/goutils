@@ -9,6 +9,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -71,6 +72,10 @@ func (h HttpResponse) ToFile(filename string) error {
 
 func (h HttpResponse) ToJson(v interface{}) error {
 	return json.Unmarshal(h.Body, v)
+}
+
+func (h HttpResponse) ToYaml(v interface{}) error {
+	return yaml.Unmarshal(h.Body, v)
 }
 
 func (h HttpResponse) ToXml(v interface{}) error {
@@ -293,6 +298,8 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 				out.Close()
 				return nil, err
 			}
+
+			counter.end()
 		} else {
 			if _, err = io.Copy(out, resp.Body); err != nil {
 				out.Close()
@@ -417,6 +424,7 @@ type progressBarCounter struct {
 	TotalBytes     uint64
 	ProgressBar    bool
 	SimpleBarStyle bool
+	PrintMaxWidth  int
 }
 
 func (w *progressBarCounter) Write(p []byte) (int, error) {
@@ -430,20 +438,35 @@ func (w *progressBarCounter) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func (w progressBarCounter) printProgress() {
+func (w *progressBarCounter) printProgress() {
 	// Clear the line by using a character return to go back to the start and remove
 	// the remaining characters by filling it with spaces
 	// fmt.Printf("\r%s", strings.Repeat(" ", 35))
 
 	// Return again and print current status of download
 	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
+	var s string
+
 	if w.TotalBytes > 0 {
 		if w.SimpleBarStyle {
-			fmt.Printf("\r%.2f%%", float64(w.LoadedBytes)*100.00/float64(w.TotalBytes))
+			s = fmt.Sprintf("\r%.2f%%", float64(w.LoadedBytes)*100.00/float64(w.TotalBytes))
 		} else {
-			fmt.Printf("\rDownloading... %s of %s complete", humanize.Bytes(w.LoadedBytes), humanize.Bytes(w.TotalBytes))
+			s = fmt.Sprintf("\rDownloading... %s of %s complete", humanize.Bytes(w.LoadedBytes), humanize.Bytes(w.TotalBytes))
 		}
 	} else {
-		fmt.Printf("\rDownloading... %s complete", humanize.Bytes(w.LoadedBytes))
+		s = fmt.Sprintf("\rDownloading... %s complete", humanize.Bytes(w.LoadedBytes))
 	}
+
+	slen := len(s)
+
+	if slen > w.PrintMaxWidth {
+		w.PrintMaxWidth = slen
+	}
+
+	fmt.Print(s)
+}
+
+func (w *progressBarCounter) end() {
+	fmt.Print("\x1b[1K")
+	fmt.Print(strings.Repeat("\b", w.PrintMaxWidth))
 }

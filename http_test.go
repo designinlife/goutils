@@ -63,11 +63,17 @@ func TestHttpClient_Put(t *testing.T) {
 func TestHttpClient_DownloadFile(t *testing.T) {
 	client := NewHttpClient()
 	resp, err := client.Get("https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe", &HttpRequest{
-		ToFile:      filepath.Join(os.TempDir(), "/python-3.9.6-amd64.exe"),
+		ToFile:      filepath.Join(os.TempDir(), "python-3.9.6-amd64.exe"),
 		ProgressBar: true,
 		Proxy:       "http://127.0.0.1:3128",
 		Timeout:     time.Second * 300,
 	})
+	// resp, err := client.Get("https://getcomposer.org/download/2.1.3/composer.phar", &HttpRequest{
+	// 	ToFile:      filepath.Join(os.TempDir(), "composer-2.1.3.phar"),
+	// 	ProgressBar: true,
+	// 	Proxy:       "http://127.0.0.1:3128",
+	// 	Timeout:     time.Second * 300,
+	// })
 
 	if err != nil {
 		t.Errorf("Request errors. (%v)", err)
