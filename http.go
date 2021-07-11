@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"github.com/dustin/go-humanize"
+	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
@@ -279,18 +280,27 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 			totalSize = uint64(intNum)
 		}
 
-		counter := &progressBarCounter{ProgressBar: r.ProgressBar, TotalBytes: totalSize, SimpleBarStyle: true}
+		showProgressBar := false
 
-		if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
-			out.Close()
-			return nil, err
+		if isatty.IsTerminal(os.Stdout.Fd()) && r.ProgressBar {
+			showProgressBar = true
+		}
+
+		if showProgressBar {
+			counter := &progressBarCounter{ProgressBar: true, TotalBytes: totalSize, SimpleBarStyle: true}
+
+			if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
+				out.Close()
+				return nil, err
+			}
+		} else {
+			if _, err = io.Copy(out, resp.Body); err != nil {
+				out.Close()
+				return nil, err
+			}
 		}
 
 		out.Close()
-
-		if r.ProgressBar {
-			fmt.Print("\n")
-		}
 
 		if err = os.Rename(filename+".tmp", filename); err != nil {
 			return nil, err
