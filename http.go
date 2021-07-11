@@ -38,6 +38,10 @@ type HttpResponse struct {
 	Body          []byte
 }
 
+func (h HttpResponse) String() string {
+	return fmt.Sprintf("%d %s\n%s (%d)\n%s", h.StatusCode, h.RequestURI, h.ContentType, h.ContentLength, string(h.Body))
+}
+
 func NewHttpClient() *HttpClient {
 	return &HttpClient{}
 }
@@ -47,7 +51,7 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 	req, _ := http.NewRequest(method, uri, nil)
 
 	// 设置 Headers
-	if r.Headers != nil {
+	if r != nil && r.Headers != nil {
 		for k, v := range r.Headers {
 			if vv, ok := v.(string); ok {
 				req.Header.Set(k, vv)
@@ -66,94 +70,104 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 	}
 
 	// 设置 Cookies
-	switch r.Cookies.(type) {
-	case string:
-		cookies := r.Cookies.(string)
-		req.Header.Add("Cookie", cookies)
-	case map[string]string:
-		cookies := r.Cookies.(map[string]string)
-		for k, v := range cookies {
-			req.AddCookie(&http.Cookie{
-				Name:  k,
-				Value: v,
-			})
-		}
-	case []*http.Cookie:
-		cookies := r.Cookies.([]*http.Cookie)
-		for _, cookie := range cookies {
-			req.AddCookie(cookie)
+	if r != nil {
+		switch r.Cookies.(type) {
+		case string:
+			cookies := r.Cookies.(string)
+			req.Header.Add("Cookie", cookies)
+		case map[string]string:
+			cookies := r.Cookies.(map[string]string)
+			for k, v := range cookies {
+				req.AddCookie(&http.Cookie{
+					Name:  k,
+					Value: v,
+				})
+			}
+		case []*http.Cookie:
+			cookies := r.Cookies.([]*http.Cookie)
+			for _, cookie := range cookies {
+				req.AddCookie(cookie)
+			}
 		}
 	}
 
 	// 设置 Query 查询参数
-	switch r.Query.(type) {
-	case string:
-		str := r.Query.(string)
-		req.URL.RawQuery = str
-	case map[string]interface{}:
-		q := req.URL.Query()
-		for k, v := range r.Query.(map[string]interface{}) {
-			if vv, ok := v.(string); ok {
-				q.Set(k, vv)
-				continue
-			}
-			if vv, ok := v.([]string); ok {
-				for _, vvv := range vv {
-					q.Add(k, vvv)
+	if r != nil {
+		switch r.Query.(type) {
+		case string:
+			str := r.Query.(string)
+			req.URL.RawQuery = str
+		case map[string]interface{}:
+			q := req.URL.Query()
+			for k, v := range r.Query.(map[string]interface{}) {
+				if vv, ok := v.(string); ok {
+					q.Set(k, vv)
+					continue
+				}
+				if vv, ok := v.([]string); ok {
+					for _, vvv := range vv {
+						q.Add(k, vvv)
+					}
 				}
 			}
+			req.URL.RawQuery = q.Encode()
 		}
-		req.URL.RawQuery = q.Encode()
 	}
 
 	// 设置 Form 表单参数
-	if r.FormParams != nil {
-		if _, ok := r.Headers["Content-Type"]; !ok {
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		}
-
-		values := url.Values{}
-		for k, v := range r.FormParams {
-			if vv, ok := v.(string); ok {
-				values.Set(k, vv)
+	if r != nil {
+		if r.FormParams != nil {
+			if _, ok := r.Headers["Content-Type"]; !ok {
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			}
-			if vv, ok := v.([]string); ok {
-				for _, vvv := range vv {
-					values.Add(k, vvv)
+
+			values := url.Values{}
+			for k, v := range r.FormParams {
+				if vv, ok := v.(string); ok {
+					values.Set(k, vv)
+				}
+				if vv, ok := v.([]string); ok {
+					for _, vvv := range vv {
+						values.Add(k, vvv)
+					}
 				}
 			}
+			req.Body = ioutil.NopCloser(strings.NewReader(values.Encode()))
 		}
-		req.Body = ioutil.NopCloser(strings.NewReader(values.Encode()))
 	}
 
 	// 设置 JSON 请求
-	if r.JSON != nil {
-		if _, ok := r.Headers["Content-Type"]; !ok {
-			req.Header.Set("Content-Type", "application/json")
-		}
+	if r != nil {
+		if r.JSON != nil {
+			if _, ok := r.Headers["Content-Type"]; !ok {
+				req.Header.Set("Content-Type", "application/json")
+			}
 
-		b, err := json.Marshal(r.JSON)
-		if err == nil {
-			req.Body = ioutil.NopCloser(bytes.NewReader(b))
+			b, err := json.Marshal(r.JSON)
+			if err == nil {
+				req.Body = ioutil.NopCloser(bytes.NewReader(b))
+			}
 		}
 	}
 
 	// 设置 XML 请求
-	if r.XML != nil {
-		if _, ok := r.Headers["Content-Type"]; !ok {
-			req.Header.Set("Content-Type", "application/xml")
-		}
-
-		switch r.XML.(type) {
-		case map[string]string:
-			b, err := map2XML(r.XML.(map[string]string))
-			if err == nil {
-				req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	if r != nil {
+		if r.XML != nil {
+			if _, ok := r.Headers["Content-Type"]; !ok {
+				req.Header.Set("Content-Type", "application/xml")
 			}
-		default:
-			b, err := xml.Marshal(r.JSON)
-			if err == nil {
-				req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+
+			switch r.XML.(type) {
+			case map[string]string:
+				b, err := map2XML(r.XML.(map[string]string))
+				if err == nil {
+					req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+				}
+			default:
+				b, err := xml.Marshal(r.JSON)
+				if err == nil {
+					req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+				}
 			}
 		}
 	}
@@ -163,15 +177,21 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	if r.Proxy != "" {
+	if r != nil && r.Proxy != "" {
 		proxy, err := url.Parse(r.Proxy)
 		if err == nil {
 			tr.Proxy = http.ProxyURL(proxy)
 		}
 	}
 
+	timeout := time.Second * 60
+
+	if r != nil && r.Timeout > 0 {
+		timeout = r.Timeout
+	}
+
 	client := &http.Client{
-		Timeout:   r.Timeout,
+		Timeout:   timeout,
 		Transport: tr,
 	}
 
@@ -199,7 +219,13 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 	}
 
 	// 检查非 200 响应状态
-	if !r.AllowNon200Response && !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+	allowNon200 := false
+
+	if r != nil {
+		allowNon200 = r.AllowNon200Response
+	}
+
+	if !allowNon200 && !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
 		return ret, errors.New(fmt.Sprintf("A non-200 response status code was detected. (StatusCode: %d)", resp.StatusCode))
 	}
 
