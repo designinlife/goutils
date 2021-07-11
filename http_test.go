@@ -7,13 +7,23 @@ import (
 
 func TestHttpClient_Get(t *testing.T) {
 	client := NewHttpClient()
-	resp, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", nil)
+	resp1, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", nil)
 
 	if err != nil {
 		t.Errorf("Request errors. (%v)", err)
 	}
 
-	fmt.Println(resp)
+	fmt.Println(resp1)
+
+	resp2, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", &HttpRequest{
+		Proxy: "http://127.0.0.1:3128",
+	})
+
+	if err != nil {
+		t.Errorf("Request errors. (%v)", err)
+	}
+
+	fmt.Println(resp2)
 }
 
 func TestHttpClient_Post(t *testing.T) {
