@@ -22,7 +22,7 @@ import (
 )
 
 type HttpClient struct {
-	ProgressBarWriter ProgressBar
+	ProgressBar ProgressBar
 }
 
 type ProgressBar interface {
@@ -103,7 +103,7 @@ func NewHttpClient(opts ...HttpClientOption) *HttpClient {
 
 func HttpClientOptionWithProgressBar(w ProgressBar) HttpClientOption {
 	return func(c *HttpClient) {
-		c.ProgressBarWriter = w
+		c.ProgressBar = w
 	}
 }
 
@@ -313,15 +313,15 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 		}
 
 		if showProgressBar {
-			if h.ProgressBarWriter != nil {
-				h.ProgressBarWriter.SetTotalBytes(totalSize)
+			if h.ProgressBar != nil {
+				h.ProgressBar.SetTotalBytes(totalSize)
 
-				if _, err = io.Copy(out, io.TeeReader(resp.Body, h.ProgressBarWriter)); err != nil {
+				if _, err = io.Copy(out, io.TeeReader(resp.Body, h.ProgressBar)); err != nil {
 					out.Close()
 					return nil, err
 				}
 
-				_ = h.ProgressBarWriter.Close()
+				_ = h.ProgressBar.Close()
 			} else {
 				counter := &progressBarCounter{ProgressBar: true, TotalBytes: totalSize, SimpleBarStyle: true}
 
