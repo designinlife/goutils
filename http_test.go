@@ -60,8 +60,40 @@ func TestHttpClient_Put(t *testing.T) {
 	fmt.Println(resp)
 }
 
+type tProgressBar struct {
+	FileName    string
+	LoadedBytes uint64
+	TotalBytes  uint64
+}
+
+func (bar *tProgressBar) SetTotalBytes(totalBytes uint64) {
+	bar.TotalBytes = totalBytes
+}
+
+func (bar *tProgressBar) Write(p []byte) (int, error) {
+	n := len(p)
+	bar.LoadedBytes += uint64(n)
+
+	// fmt.Println(bar.LoadedBytes)
+	// fmt.Println(bar.TotalBytes)
+
+	fmt.Printf("\r%s (%.2f%%)", bar.FileName, float64(bar.LoadedBytes)*100.00/float64(bar.TotalBytes))
+
+	return n, nil
+}
+
+func (bar *tProgressBar) Close() error {
+	fmt.Println("Completed. [bar]")
+
+	return nil
+}
+
 func TestHttpClient_DownloadFile(t *testing.T) {
-	client := NewHttpClient()
+	bar := &tProgressBar{
+		FileName: "composer-2.1.3.phar",
+	}
+
+	client := NewHttpClient(HttpClientOptionWithProgressBar(bar))
 	resp, err := client.Get("https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe", &HttpRequest{
 		ToFile:      filepath.Join(os.TempDir(), "python-3.9.6-amd64.exe"),
 		ProgressBar: true,

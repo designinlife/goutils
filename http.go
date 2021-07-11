@@ -22,6 +22,13 @@ import (
 )
 
 type HttpClient struct {
+	ProgressBarWriter ProgressBar
+}
+
+type ProgressBar interface {
+	io.Writer
+	io.Closer
+	SetTotalBytes(uint64)
 }
 
 type HttpRequest struct {
@@ -82,8 +89,22 @@ func (h HttpResponse) ToXml(v interface{}) error {
 	return xml.Unmarshal(h.Body, v)
 }
 
-func NewHttpClient() *HttpClient {
-	return &HttpClient{}
+type HttpClientOption func(*HttpClient)
+
+func NewHttpClient(opts ...HttpClientOption) *HttpClient {
+	c := &HttpClient{}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
+}
+
+func HttpClientOptionWithProgressBar(w ProgressBar) HttpClientOption {
+	return func(c *HttpClient) {
+		c.ProgressBarWriter = w
+	}
 }
 
 func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse, error) {
@@ -292,14 +313,25 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 		}
 
 		if showProgressBar {
-			counter := &progressBarCounter{ProgressBar: true, TotalBytes: totalSize, SimpleBarStyle: true}
+			if h.ProgressBarWriter != nil {
+				h.ProgressBarWriter.SetTotalBytes(totalSize)
 
-			if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
-				out.Close()
-				return nil, err
+				if _, err = io.Copy(out, io.TeeReader(resp.Body, h.ProgressBarWriter)); err != nil {
+					out.Close()
+					return nil, err
+				}
+
+				_ = h.ProgressBarWriter.Close()
+			} else {
+				counter := &progressBarCounter{ProgressBar: true, TotalBytes: totalSize, SimpleBarStyle: true}
+
+				if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
+					out.Close()
+					return nil, err
+				}
+
+				_ = counter.Close()
 			}
-
-			counter.end()
 		} else {
 			if _, err = io.Copy(out, resp.Body); err != nil {
 				out.Close()
@@ -466,7 +498,9 @@ func (w *progressBarCounter) printProgress() {
 	fmt.Print(s)
 }
 
-func (w *progressBarCounter) end() {
+func (w *progressBarCounter) Close() error {
 	fmt.Print("\x1b[1K")
 	fmt.Print(strings.Repeat("\b", w.PrintMaxWidth))
+
+	return nil
 }
