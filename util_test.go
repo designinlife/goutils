@@ -27,7 +27,7 @@ func TestIsRegularIPv4Address(t *testing.T) {
 }
 
 func TestPathNormalized(t *testing.T) {
-	s := PathNormalized("C:/tmp\\a////b/c")
+	s := RemovePathSeparatorSuffix(PathNormalized("C:/tmp\\a////b/c\\\\"))
 
 	fmt.Println(s)
 }
