@@ -29,6 +29,19 @@ func TestHttpClient_Post(t *testing.T) {
 	fmt.Println(resp)
 }
 
+func TestHttpClient_Put(t *testing.T) {
+	client := NewHttpClient()
+	resp, err := client.Put("https://postman-echo.com/put", &HttpRequest{
+		JSON: map[string]interface{}{"foo1": "bar1", "foo2": "bar2", "foo3": "bar3"},
+	})
+
+	if err != nil {
+		t.Errorf("Request errors. (%v)", err)
+	}
+
+	fmt.Println(resp)
+}
+
 // func TestWebClient_DownloadFile(t *testing.T) {
 // 	// client := NewHTTPClient()
 // 	client := NewHTTPClientWithOptions(HTTPOptionWithProxy("http://127.0.0.1:3128"), HTTPOptionWithTimeout(300*time.Second))
