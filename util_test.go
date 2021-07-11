@@ -1,6 +1,7 @@
 package goutils
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -23,4 +24,10 @@ func TestIsRegularIPv4Address(t *testing.T) {
 	if ok := IsRegularIPv4Address("192.168.1.0/24"); !ok {
 		t.Errorf("IsRegularIPv4Address test failed.")
 	}
+}
+
+func TestPathNormalized(t *testing.T) {
+	s := PathNormalized("C:/tmp\\a////b/c")
+
+	fmt.Println(s)
 }

@@ -1,6 +1,7 @@
 package goutils
 
 import (
+	"os"
 	"regexp"
 	"strings"
 )
@@ -44,6 +45,14 @@ func RemovePathSeparatorPrefix(s string) string {
 // RemovePathSeparatorSuffix 移除尾部的 /,\ 字符。
 func RemovePathSeparatorSuffix(s string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(s, "/"), "\\")
+}
+
+func PathNormalized(s string) string {
+	exp := regexp.MustCompile(`[/\\]+`)
+
+	s = exp.ReplaceAllString(s, string(os.PathSeparator))
+
+	return s
 }
 
 // IsInteger 检查字符串是否匹配整数模式？
