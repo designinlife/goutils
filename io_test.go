@@ -5,5 +5,5 @@ import (
 )
 
 func TestDecompressZip(t *testing.T) {
-	// DecompressZip("D:\\test.zip", "D:\\tmp")
+	// DecompressZip("D:\\tmp\\test.zip", "D:\\tmp")
 }

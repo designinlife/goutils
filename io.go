@@ -242,87 +242,50 @@ func CompressZipDir(srcdir, dstZipFileName string) error {
 }
 
 // DecompressZip 解压缩 ZIP 文件到指定的目录。
-func DecompressZip(src, dst string) error {
-	r, err := zip.OpenReader(src)
+func DecompressZip(zipFile string, destDir string) error {
+	zipReader, err := zip.OpenReader(zipFile)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := r.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	err = os.MkdirAll(dst, 0755)
-	if err != nil {
-		return err
-	}
-
-	// Closure to address file descriptors issue with all the deferred .Close() methods
-	extractAndWriteFile := func(f *zip.File) error {
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-		defer func() {
-			if err := rc.Close(); err != nil {
-				panic(err)
-			}
-		}()
-
-		var decodeName string
-
+	defer zipReader.Close()
+	var decodeName string
+	for _, f := range zipReader.File {
 		if f.Flags == 0 {
-			// 如果标致位是0, 则是默认的本地编码, Windows CHS 默认为 GBK。
+			// 如果标致位是0 则是默认的本地编码 默认为gbk
 			i := bytes.NewReader([]byte(f.Name))
 			decoder := transform.NewReader(i, simplifiedchinese.GB18030.NewDecoder())
 			content, _ := ioutil.ReadAll(decoder)
 			decodeName = string(content)
 		} else {
-			// 如果标志为是 1 << 11 也就是 2048, 则是 UTF-8 编码。
+			// 如果标志为是 1 << 11也就是 2048 则是utf-8编码
 			decodeName = f.Name
 		}
 
-		path := filepath.Join(dst, decodeName)
-
-		if !strings.HasPrefix(path, filepath.Clean(dst)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", path)
-		}
-
+		fpath := filepath.Join(destDir, decodeName)
 		if f.FileInfo().IsDir() {
-			err = os.MkdirAll(path, f.Mode())
-			if err != nil {
-				return err
-			}
+			os.MkdirAll(fpath, os.ModePerm)
 		} else {
-			err = os.MkdirAll(filepath.Dir(path), f.Mode())
-			if err != nil {
+			if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
 				return err
 			}
-			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return err
-			}
-			defer func() {
-				if err := f.Close(); err != nil {
-					panic(err)
-				}
-			}()
 
-			_, err = io.Copy(f, rc)
+			inFile, err := f.Open()
+			if err != nil {
+				return err
+			}
+			defer inFile.Close()
+
+			outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			defer outFile.Close()
+
+			_, err = io.Copy(outFile, inFile)
 			if err != nil {
 				return err
 			}
 		}
-		return nil
 	}
-
-	for _, f := range r.File {
-		err := extractAndWriteFile(f)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
