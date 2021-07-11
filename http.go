@@ -42,6 +42,14 @@ func (h HttpResponse) String() string {
 	return fmt.Sprintf("%d %s\n%s (%d)\n%s", h.StatusCode, h.RequestURI, h.ContentType, h.ContentLength, string(h.Body))
 }
 
+func (h HttpResponse) ToString() string {
+	return string(h.Body)
+}
+
+func (h HttpResponse) ToFile(filename string) error {
+	return ioutil.WriteFile(filename, h.Body, 0644)
+}
+
 func (h HttpResponse) ToJson(v interface{}) error {
 	return json.Unmarshal(h.Body, v)
 }
