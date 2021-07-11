@@ -47,6 +47,7 @@ func RemovePathSeparatorSuffix(s string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(s, "/"), "\\")
 }
 
+// PathNormalized 移除路径中多余的 /\ 分隔字符。
 func PathNormalized(s string) string {
 	exp := regexp.MustCompile(`[/\\]+`)
 
