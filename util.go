@@ -46,6 +46,24 @@ func RemovePathSeparatorSuffix(s string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(s, "/"), "\\")
 }
 
+// IsInteger 检查字符串是否匹配整数模式？
+func IsInteger(s string) bool {
+	if ok, _ := regexp.MatchString("^[-]?[1-9]+[0-9]*$", s); ok {
+		return true
+	}
+
+	return false
+}
+
+// IsRegularIPv4Address 检查字符串是否匹配 IPv4 模式？
+func IsRegularIPv4Address(s string) bool {
+	if ok, _ := regexp.MatchString("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(/[0-9]{1,2})?$", s); ok {
+		return true
+	}
+
+	return false
+}
+
 // IsRegularIPv4AndPort 检查字符串是否匹配 IP:Port 模式？
 func IsRegularIPv4AndPort(s string) bool {
 	if ok, _ := regexp.MatchString("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]):[0-9]+$", s); ok {
