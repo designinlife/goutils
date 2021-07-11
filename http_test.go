@@ -2,7 +2,10 @@ package goutils
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestHttpClient_Get(t *testing.T) {
@@ -52,12 +55,18 @@ func TestHttpClient_Put(t *testing.T) {
 	fmt.Println(resp)
 }
 
-// func TestWebClient_DownloadFile(t *testing.T) {
-// 	// client := NewHTTPClient()
-// 	client := NewHTTPClientWithOptions(HTTPOptionWithProxy("http://127.0.0.1:3128"), HTTPOptionWithTimeout(300*time.Second))
-// 	err := client.DownloadFile("https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe", filepath.Join(os.TempDir(), "/python-3.9.6-amd64.exe"), true)
-//
-// 	if err != nil {
-// 		t.Errorf("Download errors. (%v)", err)
-// 	}
-// }
+func TestHttpClient_DownloadFile(t *testing.T) {
+	client := NewHttpClient()
+	resp, err := client.Get("https://www.python.org/ftp/python/3.9.6/python-3.9.6-amd64.exe", &HttpRequest{
+		ToFile:      filepath.Join(os.TempDir(), "/python-3.9.6-amd64.exe"),
+		ProgressBar: true,
+		Proxy:       "http://127.0.0.1:3128",
+		Timeout:     time.Second * 300,
+	})
+
+	if err != nil {
+		t.Errorf("Request errors. (%v)", err)
+	}
+
+	fmt.Println(resp)
+}

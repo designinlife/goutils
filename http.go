@@ -6,10 +6,15 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"github.com/dustin/go-humanize"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -18,15 +23,28 @@ type HttpClient struct {
 }
 
 type HttpRequest struct {
-	Timeout             time.Duration
-	Query               interface{}
-	Headers             map[string]interface{}
-	Cookies             interface{}
-	FormParams          map[string]interface{}
-	JSON                interface{}
-	XML                 interface{}
-	Proxy               string
+	// 超时 (默认值: 60s)
+	Timeout time.Duration
+	// 查询参数
+	Query interface{}
+	// 请求头信息
+	Headers map[string]interface{}
+	// Cookie 信息
+	Cookies interface{}
+	// POST 表单参数
+	FormParams map[string]interface{}
+	// JSON 数据参数
+	JSON interface{}
+	// XML 数据参数
+	XML interface{}
+	// 代理服务器地址
+	Proxy string
+	// 是否服务器响应非 200 状态时，返回 error？
 	AllowNon200Response bool
+	// 下载到本地文件
+	ToFile string
+	// 是否显示进度条？
+	ProgressBar bool
 }
 
 type HttpResponse struct {
@@ -217,22 +235,7 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 		return nil, err
 	}
 
-	content, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		return nil, err
-	}
-
-	resp.Body.Close()
-
-	ret := &HttpResponse{
-		RequestURI:    resp.Request.RequestURI,
-		StatusCode:    resp.StatusCode,
-		Header:        resp.Header,
-		ContentType:   resp.Header.Get("Content-Type"),
-		ContentLength: resp.ContentLength,
-		Body:          content,
-	}
+	defer resp.Body.Close()
 
 	// 检查非 200 响应状态
 	allowNon200 := false
@@ -242,7 +245,71 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 	}
 
 	if !allowNon200 && !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-		return ret, errors.New(fmt.Sprintf("A non-200 response status code was detected. (StatusCode: %d)", resp.StatusCode))
+		return nil, errors.New(fmt.Sprintf("A non-200 response status code was detected. (StatusCode: %d)", resp.StatusCode))
+	}
+
+	var content []byte
+
+	if r != nil && r.ToFile != "" {
+		filename := r.ToFile
+
+		dirn := filepath.Dir(filename)
+
+		if !IsDir(dirn) {
+			if err := os.MkdirAll(dirn, 0755); err != nil {
+				return nil, err
+			}
+		}
+
+		out, err := os.Create(filename + ".tmp")
+		if err != nil {
+			return nil, err
+		}
+
+		// 此处不能使用 defer 方式关闭 out 资源，因为在 os.Rename 时资源句柄未释放造成重命名出错！
+		// defer out.Close()
+
+		var totalSize uint64
+
+		totalSize = 0
+		contentSize := resp.Header.Get("Content-Length")
+
+		if contentSize != "" {
+			intNum, _ := strconv.Atoi(contentSize)
+			totalSize = uint64(intNum)
+		}
+
+		counter := &progressBarCounter{ProgressBar: r.ProgressBar, TotalBytes: totalSize, SimpleBarStyle: true}
+
+		if _, err = io.Copy(out, io.TeeReader(resp.Body, counter)); err != nil {
+			out.Close()
+			return nil, err
+		}
+
+		out.Close()
+
+		if r.ProgressBar {
+			fmt.Print("\n")
+		}
+
+		if err = os.Rename(filename+".tmp", filename); err != nil {
+			return nil, err
+		}
+	} else {
+		content, err = ioutil.ReadAll(resp.Body)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ret := &HttpResponse{
+		RequestURI:    resp.Request.RequestURI,
+		StatusCode:    resp.StatusCode,
+		Header:        resp.Header,
+		ContentType:   resp.Header.Get("Content-Type"),
+		ContentLength: resp.ContentLength,
+		Body:          content,
 	}
 
 	return ret, nil
@@ -331,4 +398,42 @@ func (m mdata) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	}
 
 	return e.EncodeToken(start.End())
+}
+
+// progressBarCounter counts the number of bytes written to it. It implements to the io.Writer interface
+// and we can pass this into io.TeeReader() which will report progress on each write cycle.
+type progressBarCounter struct {
+	LoadedBytes    uint64
+	TotalBytes     uint64
+	ProgressBar    bool
+	SimpleBarStyle bool
+}
+
+func (w *progressBarCounter) Write(p []byte) (int, error) {
+	n := len(p)
+	w.LoadedBytes += uint64(n)
+
+	if w.ProgressBar {
+		w.printProgress()
+	}
+
+	return n, nil
+}
+
+func (w progressBarCounter) printProgress() {
+	// Clear the line by using a character return to go back to the start and remove
+	// the remaining characters by filling it with spaces
+	// fmt.Printf("\r%s", strings.Repeat(" ", 35))
+
+	// Return again and print current status of download
+	// We use the humanize package to print the bytes in a meaningful way (e.g. 10 MB)
+	if w.TotalBytes > 0 {
+		if w.SimpleBarStyle {
+			fmt.Printf("\r%.2f%%", float64(w.LoadedBytes)*100.00/float64(w.TotalBytes))
+		} else {
+			fmt.Printf("\rDownloading... %s of %s complete", humanize.Bytes(w.LoadedBytes), humanize.Bytes(w.TotalBytes))
+		}
+	} else {
+		fmt.Printf("\rDownloading... %s complete", humanize.Bytes(w.LoadedBytes))
+	}
 }
