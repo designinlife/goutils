@@ -132,9 +132,9 @@ func Unzip(zipFile string, destDir string) error {
 	return nil
 }
 
-func Tar(source, target string) error {
-	filename := filepath.Base(source)
-	target = filepath.Join(target, fmt.Sprintf("%s.tar", filename))
+func Tar(sourceDir, targetDir string) error {
+	filename := filepath.Base(sourceDir)
+	target := filepath.Join(targetDir, fmt.Sprintf("%s.tar", filename))
 	tarfile, err := os.Create(target)
 	if err != nil {
 		return err
@@ -144,17 +144,17 @@ func Tar(source, target string) error {
 	tarball := tar.NewWriter(tarfile)
 	defer tarball.Close()
 
-	info, err := os.Stat(source)
+	info, err := os.Stat(sourceDir)
 	if err != nil {
 		return nil
 	}
 
 	var baseDir string
 	if info.IsDir() {
-		baseDir = filepath.Base(source)
+		baseDir = filepath.Base(sourceDir)
 	}
 
-	return filepath.Walk(source,
+	return filepath.Walk(sourceDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -165,7 +165,7 @@ func Tar(source, target string) error {
 			}
 
 			if baseDir != "" {
-				header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
+				header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, sourceDir))
 			}
 
 			if err := tarball.WriteHeader(header); err != nil {

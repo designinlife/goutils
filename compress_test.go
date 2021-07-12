@@ -19,3 +19,27 @@ func TestUnzip(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTar(t *testing.T) {
+	err := Tar("D:\\tmp\\YX", "D:\\tmp\\")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUntar(t *testing.T) {
+	err := Untar("D:\\tmp\\YX.tar", "D:\\tmp\\YX-tar")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGzip(t *testing.T) {
+	err := Gzip("D:\\tmp\\YX", "D:\\tmp\\")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
