@@ -43,3 +43,19 @@ func TestGzip(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTgz(t *testing.T) {
+	err := TarGz("D:\\tmp\\YX", "D:\\tmp\\")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUntarGz(t *testing.T) {
+	err := UntarGz("D:\\tmp\\YX.tar.gz", "D:\\tmp\\YX-tar-gz")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
