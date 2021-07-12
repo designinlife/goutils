@@ -44,7 +44,7 @@ func TestGzip(t *testing.T) {
 	}
 }
 
-func TestTgz(t *testing.T) {
+func TestTarGzip(t *testing.T) {
 	err := TarGzip("D:\\tmp\\YX", "D:\\tmp\\")
 
 	if err != nil {
@@ -52,7 +52,7 @@ func TestTgz(t *testing.T) {
 	}
 }
 
-func TestUntarGz(t *testing.T) {
+func TestUntarGzip(t *testing.T) {
 	err := UntarGzip("D:\\tmp\\YX.tar.gz", "D:\\tmp\\YX-tar-gz")
 
 	if err != nil {
