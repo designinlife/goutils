@@ -56,6 +56,14 @@ func PathNormalized(s string) string {
 	return s
 }
 
+func UnixPathNormalized(s string) string {
+	exp := regexp.MustCompile(`[/\\]+`)
+
+	s = exp.ReplaceAllString(s, "/")
+
+	return s
+}
+
 // IsInteger 检查字符串是否匹配整数模式？
 func IsInteger(s string) bool {
 	if ok, _ := regexp.MatchString("^[-]?[1-9]+[0-9]*$", s); ok {

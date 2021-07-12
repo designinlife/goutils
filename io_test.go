@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
-func TestDecompressZip(t *testing.T) {
-	// DecompressZip("D:\\tmp\\test.zip", "D:\\tmp")
+func TestIsDir(t *testing.T) {
+	if ok := IsDir("/tmp"); !ok {
+		t.Fatal("test IsDir failed.")
+	}
 }
