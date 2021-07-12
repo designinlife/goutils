@@ -270,7 +270,7 @@ func UnGzip(source, target string) error {
 	return err
 }
 
-func TarGz(source, target string) error {
+func TarGzip(source, target string) error {
 	filename := filepath.Base(source)
 	target = filepath.Join(target, fmt.Sprintf("%s.tar.gz", filename))
 	targetFile, err := os.Create(target)
@@ -325,7 +325,7 @@ func TarGz(source, target string) error {
 		})
 }
 
-func UntarGz(source, target string) error {
+func UntarGzip(source, target string) error {
 	reader, err := os.Open(source)
 	if err != nil {
 		return err
