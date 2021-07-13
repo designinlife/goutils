@@ -56,6 +56,16 @@ func PathNormalized(s string) string {
 	return s
 }
 
+// WindowsPathNormalized 转换路径分隔符为 Windows 样式。
+func WindowsPathNormalized(s string) string {
+	exp := regexp.MustCompile(`[/\\]+`)
+
+	s = exp.ReplaceAllString(s, "\\")
+
+	return s
+}
+
+// UnixPathNormalized 转换路径分隔符为 Unix 样式。
 func UnixPathNormalized(s string) string {
 	exp := regexp.MustCompile(`[/\\]+`)
 
