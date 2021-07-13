@@ -57,10 +57,12 @@ func (s *SubProcess) PrintCommands() *SubProcess {
 	return s
 }
 
+// Run 执行系统命令。
 func (s *SubProcess) Run() (int, error) {
 	return s.RunWithWriter(nil)
 }
 
+// RunWithWriter 执行系统命令并同时输出到 io.Writer。
 func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 	if s.Option.Debug {
 		s.PrintCommands()
