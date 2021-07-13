@@ -19,7 +19,7 @@ type DbTableSchema struct {
 	UpdateTime     string `db:"UPDATE_TIME"`
 	CheckTime      string `db:"CHECK_TIME"`
 	TableCollation string `db:"TABLE_COLLATION"`
-	Checksum       string `db:"CHECKSUM"`
+	Checksum       uint64 `db:"CHECKSUM"`
 	CreateOptions  string `db:"CREATE_OPTIONS"`
 	TableComment   string `db:"TABLE_COMMENT"`
 }
@@ -29,15 +29,15 @@ type DbColumnSchema struct {
 	TableSchema            string `db:"TABLE_SCHEMA"`
 	TableName              string `db:"TABLE_NAME"`
 	ColumnName             string `db:"COLUMN_NAME"`
-	OrdinalPosition        string `db:"ORDINAL_POSITION"`
+	OrdinalPosition        uint64 `db:"ORDINAL_POSITION"`
 	ColumnDefault          string `db:"COLUMN_DEFAULT"`
 	IsNullable             string `db:"IS_NULLABLE"`
 	DataType               string `db:"DATA_TYPE"`
-	CharacterMaximumLength string `db:"CHARACTER_MAXIMUM_LENGTH"`
-	CharacterOctetLength   string `db:"CHARACTER_OCTET_LENGTH"`
-	NumericPrecision       string `db:"NUMERIC_PRECISION"`
-	NumericScale           string `db:"NUMERIC_SCALE"`
-	DatetimePrecision      string `db:"DATETIME_PRECISION"`
+	CharacterMaximumLength uint64 `db:"CHARACTER_MAXIMUM_LENGTH"`
+	CharacterOctetLength   uint64 `db:"CHARACTER_OCTET_LENGTH"`
+	NumericPrecision       uint64 `db:"NUMERIC_PRECISION"`
+	NumericScale           uint64 `db:"NUMERIC_SCALE"`
+	DatetimePrecision      uint64 `db:"DATETIME_PRECISION"`
 	CharacterSetName       string `db:"CHARACTER_SET_NAME"`
 	CollationName          string `db:"COLLATION_NAME"`
 	ColumnType             string `db:"COLUMN_TYPE"`
