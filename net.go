@@ -66,8 +66,9 @@ func (s *httpProxy) Dial(network, addr string) (net.Conn, error) {
 
 	resp, err := http.ReadResponse(bufio.NewReader(c), req)
 	if err != nil {
-		// TODO close resp body ?
-		resp.Body.Close()
+		if resp != nil {
+			resp.Body.Close()
+		}
 		c.Close()
 		return nil, err
 	}
