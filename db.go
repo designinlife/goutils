@@ -3,8 +3,14 @@ package goutils
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/georgysavva/scany/sqlscan"
 )
+
+// NewMySQLConn 打开 MySQL 连接。
+func NewMySQLConn(host string, port int, username, passwd, database, charset string) (*sql.DB, error) {
+	return sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True", username, passwd, host, port, database, charset))
+}
 
 type DbSchema struct {
 	CatalogName             string         `db:"CATALOG_NAME"`
