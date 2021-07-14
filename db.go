@@ -6,6 +6,14 @@ import (
 	"github.com/georgysavva/scany/sqlscan"
 )
 
+type DbSchema struct {
+	CatalogName             string         `db:"CATALOG_NAME"`
+	SchemaName              string         `db:"SCHEMA_NAME"`
+	DefaultCharacterSetName string         `db:"DEFAULT_CHARACTER_SET_NAME"`
+	DefaultCollationName    string         `db:"DEFAULT_COLLATION_NAME"`
+	SqlPath                 sql.NullString `db:"SQL_PATH"`
+}
+
 type DbTableSchema struct {
 	TableCatalog   string         `db:"TABLE_CATALOG"`
 	TableSchema    string         `db:"TABLE_SCHEMA"`
@@ -52,6 +60,25 @@ type DbColumnSchema struct {
 	Privileges             string         `db:"PRIVILEGES"`
 	ColumnComment          string         `db:"COLUMN_COMMENT"`
 	GenerationExpression   string         `db:"GENERATION_EXPRESSION"`
+}
+
+func GetDatabaseSchemas(db *sql.DB, database string) ([]*DbSchema, error) {
+	ctx := context.Background()
+
+	var ds []*DbSchema
+	var err error
+
+	if database == "" {
+		err = sqlscan.Select(ctx, db, &ds, "SELECT `CATALOG_NAME`, `SCHEMA_NAME`, `DEFAULT_CHARACTER_SET_NAME`, `DEFAULT_COLLATION_NAME`, `SQL_PATH` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` NOT IN ('information_schema', 'mysql', 'sys')")
+	} else {
+		err = sqlscan.Select(ctx, db, &ds, "SELECT `CATALOG_NAME`, `SCHEMA_NAME`, `DEFAULT_CHARACTER_SET_NAME`, `DEFAULT_COLLATION_NAME`, `SQL_PATH` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` = ?", database)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ds, nil
 }
 
 func GetTableSchema(db *sql.DB, database, tableName string) (*DbTableSchema, error) {
