@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/georgysavva/scany/sqlscan"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // NewMySQLConn 打开 MySQL 连接。
