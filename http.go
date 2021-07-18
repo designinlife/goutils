@@ -3,6 +3,7 @@ package goutils
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -54,6 +55,10 @@ type HttpRequest struct {
 	ToFile string
 	// 是否显示进度条？
 	ProgressBar bool
+	// HTTP Basic 认证用户名
+	Username string
+	// HTTP Basic 认证密码
+	Password string
 }
 
 type HttpResponse struct {
@@ -107,6 +112,11 @@ func HttpClientOptionWithProgressBar(w ProgressBar) HttpClientOption {
 	}
 }
 
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
 func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse, error) {
 	// 创建 HTTP 客户端实例
 	req, _ := http.NewRequest(method, uri, nil)
@@ -132,6 +142,11 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 
 	// 设置 Cookies
 	if r != nil {
+		// HTTP Basic Auth
+		if r.Username != "" && r.Password != "" {
+			req.Header.Add("Authorization", "Basic "+basicAuth(r.Username, r.Password))
+		}
+
 		switch r.Cookies.(type) {
 		case string:
 			cookies := r.Cookies.(string)

@@ -12,10 +12,13 @@ import (
 	"time"
 )
 
+type ProcessOutLineHandle func(line string)
+
 type SubProcessOption struct {
-	Debug   bool
-	Quiet   bool
-	Timeout time.Duration
+	Debug      bool
+	Quiet      bool
+	Timeout    time.Duration
+	HandleFunc ProcessOutLineHandle
 }
 
 type SubProcess struct {
@@ -97,6 +100,10 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 	// scanner.Split(bufio.ScanWords)
 	for scanner.Scan() {
 		m := scanner.Text()
+
+		if s.Option.HandleFunc != nil {
+			s.Option.HandleFunc(strings.TrimSpace(m))
+		}
 
 		if !s.Option.Quiet {
 			logger.Info(m)
