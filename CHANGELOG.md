@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.20
+
+* SSH Tunnel 本地端口支持传 `0` 值。(即随机端口号)
+
 ## v1.0.19
 
 * 新增 SSH Tunnel 连接支持。
