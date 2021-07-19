@@ -1,6 +1,7 @@
 package goutils
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -11,4 +12,20 @@ func TestSSHClient_Upload(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
+}
+
+func TestSSHClient_Tunnel(t *testing.T) {
+	client := NewSSHClient("127.0.0.1", 22, "root", "~/.ssh/lilei", false, SSHOptionWithTunnel(&SSHTunnel{
+		Local:  &SSHTunnelEndpoint{Host: "127.0.0.1", Port: 22},
+		Remote: &SSHTunnelEndpoint{Host: "10.8.0.2", Port: 22},
+		Server: &SSHTunnelEndpoint{Host: "192.168.1.1", Port: 22},
+	}))
+
+	exitcode, err := client.Run("whoami && pwd && hostname")
+
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	fmt.Println(exitcode)
 }

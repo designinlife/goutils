@@ -37,14 +37,16 @@ type SSHTunnel struct {
 	exit   chan bool
 }
 
-func (tunnel *SSHTunnel) Start() error {
+func (tunnel *SSHTunnel) Start(opened chan bool) error {
 	listener, err := net.Listen("tcp", tunnel.Local.String())
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
 
-	logger.Debugf("[SSHTunnel] Listen: %s", tunnel.Local.String())
+	logger.Infof("[SSHTunnel] Listen: %s", tunnel.Local.String())
+
+	opened <- true
 
 	for {
 		conn, err := listener.Accept()
@@ -223,6 +225,17 @@ func (s *SSHClient) Connect() error {
 			// HostKeyCallback: ssh.FixedHostKey(hostKey),
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			Timeout:         s.Timeout,
+		}
+
+		// 检查 SSH 隧道配置 ...
+		if s.Tunnel != nil {
+			opened := make(chan bool)
+
+			s.Tunnel.Config = config
+
+			go s.Tunnel.Start(opened)
+
+			<-opened
 		}
 
 		var client *ssh.Client
