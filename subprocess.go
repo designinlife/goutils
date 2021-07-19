@@ -19,6 +19,7 @@ type SubProcessOption struct {
 	Quiet      bool
 	Timeout    time.Duration
 	HandleFunc ProcessOutLineHandle
+	ShellExec  string
 }
 
 type SubProcess struct {
@@ -73,12 +74,18 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 
 	var cmd *exec.Cmd
 
+	execBin := "/bin/sh"
+
+	if s.Option.ShellExec != "" {
+		execBin = s.Option.ShellExec
+	}
+
 	if s.Option.Timeout > 0 {
 		ctx, cancel := context.WithTimeout(context.Background(), s.Option.Timeout)
 		defer cancel()
-		cmd = exec.CommandContext(ctx, "bash", "-c", strings.Join(s.Commands, " && "))
+		cmd = exec.CommandContext(ctx, execBin, "-c", strings.Join(s.Commands, " && "))
 	} else {
-		cmd = exec.Command("bash", "-c", strings.Join(s.Commands, " && "))
+		cmd = exec.Command(execBin, "-c", strings.Join(s.Commands, " && "))
 	}
 
 	stderr, _ := cmd.StderrPipe()
