@@ -34,6 +34,7 @@ type SSHTunnel struct {
 	Remote *SSHTunnelEndpoint
 
 	Config *ssh.ClientConfig
+	exit   chan bool
 }
 
 func (tunnel *SSHTunnel) Start() error {
@@ -51,7 +52,18 @@ func (tunnel *SSHTunnel) Start() error {
 			return err
 		}
 		go tunnel.forward(conn)
+
+		select {
+		case <-tunnel.exit:
+			break
+		}
 	}
+}
+
+func (tunnel *SSHTunnel) Stop() error {
+	close(tunnel.exit)
+
+	return nil
 }
 
 func (tunnel *SSHTunnel) forward(localConn net.Conn) {
@@ -234,6 +246,10 @@ func (s *SSHClient) Connect() error {
 
 func (s *SSHClient) Close() error {
 	if s.Connected {
+		if s.Tunnel != nil {
+			s.Tunnel.Stop()
+		}
+
 		return s.Client.Close()
 	}
 
