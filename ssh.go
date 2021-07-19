@@ -44,6 +44,12 @@ func (tunnel *SSHTunnel) Start(opened chan bool) error {
 	}
 	defer listener.Close()
 
+	// 若 Local 端口为 0, 则重新读取端口号 ...
+	if tunnel.Local.Port == 0 {
+		addr := listener.Addr().(*net.TCPAddr)
+		tunnel.Local.Port = addr.Port
+	}
+
 	logger.Infof("[SSHTunnel] Listen: %s", tunnel.Local.String())
 
 	opened <- true
@@ -236,6 +242,11 @@ func (s *SSHClient) Connect() error {
 			go s.Tunnel.Start(opened)
 
 			<-opened
+
+			// 若指定端口为0, 则重新读取本地端口号.
+			if s.Port == 0 {
+				s.Port = s.Tunnel.Local.Port
+			}
 		}
 
 		var client *ssh.Client
