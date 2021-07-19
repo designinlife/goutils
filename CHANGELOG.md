@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.19
+
+* 新增 SSH Tunnel 连接支持。
+
 ## v1.0.5
 
 * 调整 HTTPOption* 命名。

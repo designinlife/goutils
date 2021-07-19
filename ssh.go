@@ -12,11 +12,71 @@ import (
 	"golang.org/x/net/proxy"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 )
+
+type SSHTunnelEndpoint struct {
+	Host string
+	Port int
+}
+
+func (endpoint *SSHTunnelEndpoint) String() string {
+	return fmt.Sprintf("%s:%d", endpoint.Host, endpoint.Port)
+}
+
+type SSHTunnel struct {
+	Local  *SSHTunnelEndpoint
+	Server *SSHTunnelEndpoint
+	Remote *SSHTunnelEndpoint
+
+	Config *ssh.ClientConfig
+}
+
+func (tunnel *SSHTunnel) Start() error {
+	listener, err := net.Listen("tcp", tunnel.Local.String())
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
+
+	logger.Debugf("[SSHTunnel] Listen: %s", tunnel.Local.String())
+
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			return err
+		}
+		go tunnel.forward(conn)
+	}
+}
+
+func (tunnel *SSHTunnel) forward(localConn net.Conn) {
+	serverConn, err := ssh.Dial("tcp", tunnel.Server.String(), tunnel.Config)
+	if err != nil {
+		logger.Errorf("[SSHTunnel] Server dial error: %s", err)
+		return
+	}
+
+	remoteConn, err := serverConn.Dial("tcp", tunnel.Remote.String())
+	if err != nil {
+		logger.Errorf("[SSHTunnel] Remote dial error: %s\n", err)
+		return
+	}
+
+	copyConn := func(writer, reader net.Conn) {
+		_, err := io.Copy(writer, reader)
+		if err != nil {
+			logger.Errorf("[SSHTunnel] io.Copy error: %s", err)
+		}
+	}
+
+	go copyConn(localConn, remoteConn)
+	go copyConn(remoteConn, localConn)
+}
 
 // SSHClient SSH 客户端
 type SSHClient struct {
@@ -42,6 +102,8 @@ type SSHClient struct {
 	TTY bool
 	// 缓冲区大小 (默认: 8192 bytes)
 	ChunkSize uint16
+	// SSH 隧道
+	Tunnel *SSHTunnel
 }
 
 type SSHClientOption func(*SSHClient)
@@ -62,6 +124,12 @@ func SSHOptionWithTimeout(timeout time.Duration) SSHClientOption {
 func SSHOptionWithChunkSize(chunkSize uint16) SSHClientOption {
 	return func(c *SSHClient) {
 		c.ChunkSize = chunkSize
+	}
+}
+
+func SSHOptionWithTunnel(tunnel *SSHTunnel) SSHClientOption {
+	return func(c *SSHClient) {
+		c.Tunnel = tunnel
 	}
 }
 
