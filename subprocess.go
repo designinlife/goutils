@@ -55,6 +55,10 @@ func (s *SubProcess) AddCommand(commands ...string) *SubProcess {
 	return s
 }
 
+func (s *SubProcess) ClearCommand() {
+	s.Commands = nil
+}
+
 func (s *SubProcess) PrintCommands() *SubProcess {
 	fmt.Println(fmt.Sprintf("\x1b[1;33m[COMMAND]\x1b[0m %s", strings.Join(s.Commands, " && ")))
 

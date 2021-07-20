@@ -3,6 +3,7 @@
 ## v1.0.20
 
 * SSH Tunnel 本地端口支持传 `0` 值。(即随机端口号)
+* SubProcess 新增 ClearCommand() 方法。
 
 ## v1.0.19
 
