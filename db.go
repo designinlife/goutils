@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/georgysavva/scany/sqlscan"
 	_ "github.com/go-sql-driver/mysql"
+	"regexp"
+	"strings"
 )
 
 // NewMySQLConn 打开 MySQL 连接。
@@ -69,6 +71,12 @@ type DbColumnSchema struct {
 	GenerationExpression   string         `db:"GENERATION_EXPRESSION"`
 }
 
+type DbUser struct {
+	User   string `db:"user"`
+	Host   string `db:"host"`
+	Grants []string
+}
+
 func GetDatabaseSchemas(db *sql.DB, database string) ([]*DbSchema, error) {
 	ctx := context.Background()
 
@@ -125,6 +133,55 @@ func GetColumnSchemas(db *sql.DB, database, tableName string) ([]*DbColumnSchema
 
 	if err != nil {
 		return nil, err
+	}
+
+	return ds, nil
+}
+
+func GetUsers(db *sql.DB, grantsRequired bool) ([]*DbUser, error) {
+	ctx := context.Background()
+
+	var ds []*DbUser
+
+	err := sqlscan.Select(ctx, db, &ds, "SELECT `user`, `host` FROM `mysql`.`user` WHERE `user` NOT IN ('mysql.infoschema', 'mysql.session', 'mysql.sys', 'root')")
+
+	if err != nil {
+		return nil, err
+	}
+
+	if grantsRequired {
+		for _, v := range ds {
+			vGrant, err := GetUserPrivileges(db, v.User, v.Host)
+			if err == nil {
+				v.Grants = vGrant
+			}
+		}
+	}
+
+	return ds, nil
+}
+
+func GetUserPrivileges(db *sql.DB, user string, host string) ([]string, error) {
+	ctx := context.Background()
+
+	rows, err := db.QueryContext(ctx, fmt.Sprintf("SHOW GRANTS FOR '%s'@'%s'", user, host))
+	if err != nil {
+		return nil, err
+	}
+
+	var grantSql string
+	var ds []string
+
+	rexp := regexp.MustCompile("TO `([a-zA-Z0-9_]+)`@`([a-zA-Z0-9%.]+)`")
+
+	for rows.Next() {
+		rows.Scan(&grantSql)
+
+		if !strings.Contains(grantSql, "GRANT USAGE ON") {
+			if rexp.MatchString(grantSql) {
+				ds = append(ds, rexp.ReplaceAllString(grantSql, "TO '$1'@'$2'"))
+			}
+		}
 	}
 
 	return ds, nil

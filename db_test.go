@@ -18,7 +18,9 @@ func TestGetSchema(t *testing.T) {
 
 	// ds, err := GetTableSchema(db, "testdb", "test_table_1")
 	// ds, err := GetTableSchemas(db, "testdb")
-	ds, err := GetColumnSchemas(db, "testdb", "test_table_1")
+	// ds, err := GetColumnSchemas(db, "testdb", "test_table_1")
+	ds, err := GetUsers(db, true)
+	// ds, err := GetUserGrants(db, "appq_planner", "%")
 
 	if err != nil {
 		t.Error(err)

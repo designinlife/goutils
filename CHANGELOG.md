@@ -5,6 +5,7 @@
 * SubProcess 新增 GetCommand() 方法。
 * SubProcess PrintCommands() 方法改为 logrus.Info 输出。
 * GetDatabaseSchemas() 新增过滤 performance_schema 系统表。
+* 新增 GetUsers(), GetUserPrivileges() 方法，方便查询 MySQL 用户及权限信息。
 
 ## v1.0.20
 
