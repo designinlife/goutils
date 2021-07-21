@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.0.21
+
+* SubProcess 新增 GetCommand() 方法。
+* SubProcess PrintCommands() 方法改为 logrus.Info 输出。
+
 ## v1.0.20
 
 * SSH Tunnel 本地端口支持传 `0` 值。(即随机端口号)
