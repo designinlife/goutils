@@ -4,6 +4,7 @@
 
 * SubProcess 新增 GetCommand() 方法。
 * SubProcess PrintCommands() 方法改为 logrus.Info 输出。
+* GetDatabaseSchemas() 新增过滤 performance_schema 系统表。
 
 ## v1.0.20
 

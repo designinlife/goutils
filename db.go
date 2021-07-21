@@ -76,7 +76,7 @@ func GetDatabaseSchemas(db *sql.DB, database string) ([]*DbSchema, error) {
 	var err error
 
 	if database == "" {
-		err = sqlscan.Select(ctx, db, &ds, "SELECT `CATALOG_NAME`, `SCHEMA_NAME`, `DEFAULT_CHARACTER_SET_NAME`, `DEFAULT_COLLATION_NAME`, `SQL_PATH` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` NOT IN ('information_schema', 'mysql', 'sys')")
+		err = sqlscan.Select(ctx, db, &ds, "SELECT `CATALOG_NAME`, `SCHEMA_NAME`, `DEFAULT_CHARACTER_SET_NAME`, `DEFAULT_COLLATION_NAME`, `SQL_PATH` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` NOT IN ('information_schema', 'performance_schema', 'mysql', 'sys')")
 	} else {
 		err = sqlscan.Select(ctx, db, &ds, "SELECT `CATALOG_NAME`, `SCHEMA_NAME`, `DEFAULT_CHARACTER_SET_NAME`, `DEFAULT_COLLATION_NAME`, `SQL_PATH` FROM `information_schema`.`SCHEMATA` WHERE `SCHEMA_NAME` = ?", database)
 	}
