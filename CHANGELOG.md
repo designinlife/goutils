@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.22
+
+* 新增 Base58, Base64 编解码。
+
 ## v1.0.21
 
 * SubProcess 新增 GetCommand() 方法。
