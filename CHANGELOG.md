@@ -3,6 +3,7 @@
 ## v1.0.22
 
 * 新增 Base58, Base64 编解码。
+* 新增 BKDR/SDBM/RS/JS/PJW/ELF/DJB/AP 哈希函数。
 
 ## v1.0.21
 
