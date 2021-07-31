@@ -43,6 +43,8 @@ type HttpRequest struct {
 	Cookies interface{}
 	// POST 表单参数
 	FormParams map[string]interface{}
+	// Text 数据参数
+	Text string
 	// JSON 数据参数
 	JSON interface{}
 	// XML 数据参数
@@ -209,6 +211,17 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 				}
 			}
 			req.Body = ioutil.NopCloser(strings.NewReader(values.Encode()))
+		}
+	}
+
+	// 设置 Text 请求
+	if r != nil {
+		if r.Text != "" {
+			if _, ok := r.Headers["Content-Type"]; !ok {
+				req.Header.Set("Content-Type", "text/plain")
+			}
+
+			req.Body = ioutil.NopCloser(bytes.NewReader([]byte(r.Text)))
 		}
 	}
 
