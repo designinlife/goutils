@@ -4,6 +4,7 @@
 
 * 新增 Base58, Base64 编解码。
 * 新增 BKDR/SDBM/RS/JS/PJW/ELF/DJB/AP 哈希函数。
+* HttpRequest 新增 Text 字段，便于文本协议数据 POST/PUT 需求场景。（例如: Influx 文本协议）
 
 ## v1.0.21
 
