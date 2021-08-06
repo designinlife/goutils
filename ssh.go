@@ -29,10 +29,13 @@ func (endpoint *SSHTunnelEndpoint) String() string {
 }
 
 type SSHTunnel struct {
-	Local  *SSHTunnelEndpoint
+	// 本地
+	Local *SSHTunnelEndpoint
+	// 隧道主机
 	Server *SSHTunnelEndpoint
+	// 目标主机
 	Remote *SSHTunnelEndpoint
-
+	// SSH 客户端配置
 	Config *ssh.ClientConfig
 	exit   chan bool
 }
