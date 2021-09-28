@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.23
+
+* 新增 SearchFile 函数。
+
 ## v1.0.22
 
 * 新增 Base58, Base64 编/解码。
