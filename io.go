@@ -10,6 +10,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -193,4 +194,19 @@ func IsDir(dirname string) bool {
 	}
 
 	return info.IsDir()
+}
+
+// SearchFile 在若干目录中搜索 name 文件。
+func SearchFile(name string, dirs []string) (string, error) {
+	var fn string
+
+	for _, v := range dirs {
+		fn = path.Join(v, name)
+
+		if IsFile(fn) {
+			return fn, nil
+		}
+	}
+
+	return "", fmt.Errorf("no file was found. (%s)", name)
 }
