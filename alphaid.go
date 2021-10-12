@@ -1,5 +1,7 @@
 package goutils
 
+// See https://github.com/dineshappavoo/basex
+
 import (
 	"errors"
 	"math/big"
