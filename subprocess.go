@@ -6,6 +6,7 @@ import (
 	"fmt"
 	logger "github.com/sirupsen/logrus"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -20,6 +21,7 @@ type SubProcessOption struct {
 	Timeout    time.Duration
 	HandleFunc ProcessOutLineHandle
 	ShellExec  string
+	Env        []string
 }
 
 type SubProcess struct {
@@ -94,6 +96,10 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 		cmd = exec.CommandContext(ctx, execBin, "-c", strings.Join(s.Commands, " && "))
 	} else {
 		cmd = exec.Command(execBin, "-c", strings.Join(s.Commands, " && "))
+	}
+
+	if s.Option.Env != nil {
+		cmd.Env = append(os.Environ(), s.Option.Env...)
 	}
 
 	stderr, _ := cmd.StderrPipe()
