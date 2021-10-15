@@ -245,13 +245,11 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 				req.Body = ioutil.NopCloser(strings.NewReader(r.JSON.(string)))
 			case []byte:
 				req.Body = ioutil.NopCloser(bytes.NewReader(r.JSON.([]byte)))
-			case map[string]interface{}:
+			default:
 				b, err := json.Marshal(r.JSON)
 				if err == nil {
 					req.Body = ioutil.NopCloser(bytes.NewReader(b))
 				}
-			default:
-				return nil, errors.New("无效的 JSON 数据类型。")
 			}
 		}
 	}

@@ -1,8 +1,13 @@
 # CHANGELOG
 
+## v1.0.27
+
+* 修复 JSON 参数类型报错。
+
 ## v1.0.26
 
 * HttpClient 新增 Cookie Jar 支持。
+* HttpClient 传入 XML, JSON 参数支持 string, []byte 类型。
 * 新增 alphaID 数字、字符串转换编码。
 
 ## v1.0.23
