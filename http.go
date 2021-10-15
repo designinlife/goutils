@@ -41,6 +41,8 @@ type HttpRequest struct {
 	Headers map[string]interface{}
 	// Cookie 信息
 	Cookies interface{}
+	// CookieJar 对象
+	CookieJar http.CookieJar
 	// POST 表单参数
 	FormParams map[string]interface{}
 	// Text 数据参数
@@ -232,9 +234,18 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 				req.Header.Set("Content-Type", "application/json")
 			}
 
-			b, err := json.Marshal(r.JSON)
-			if err == nil {
-				req.Body = ioutil.NopCloser(bytes.NewReader(b))
+			switch r.JSON.(type) {
+			case string:
+				req.Body = ioutil.NopCloser(strings.NewReader(r.JSON.(string)))
+			case []byte:
+				req.Body = ioutil.NopCloser(bytes.NewReader(r.JSON.([]byte)))
+			case map[string]interface{}:
+				b, err := json.Marshal(r.JSON)
+				if err == nil {
+					req.Body = ioutil.NopCloser(bytes.NewReader(b))
+				}
+			default:
+				return nil, errors.New("无效的 JSON 数据类型。")
 			}
 		}
 	}
@@ -282,6 +293,10 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 	client := &http.Client{
 		Timeout:   timeout,
 		Transport: tr,
+	}
+
+	if r.CookieJar != nil {
+		client.Jar = r.CookieJar
 	}
 
 	resp, err := client.Do(req)

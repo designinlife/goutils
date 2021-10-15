@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.0.26
+
+* HttpClient 新增 Cookie Jar 支持。
+* 新增 alphaID 数字、字符串转换编码。
+
 ## v1.0.23
 
 * 新增 SearchFile 函数。
