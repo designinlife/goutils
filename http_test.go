@@ -2,6 +2,8 @@ package goutils
 
 import (
 	"fmt"
+	"golang.org/x/net/publicsuffix"
+	"net/http/cookiejar"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,6 +14,36 @@ func TestHttpClient_Get(t *testing.T) {
 	client := NewHttpClient()
 	resp1, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", &HttpRequest{
 		Proxy: "http://127.0.0.1:3128",
+	})
+
+	if err != nil {
+		t.Errorf("Request errors. (%v)", err)
+	}
+
+	fmt.Println(resp1)
+
+	resp2, err := client.Get("https://postman-echo.com/get?foo1=bar1&foo2=bar2", &HttpRequest{
+		Proxy: "http://127.0.0.1:3128",
+		Query: map[string]interface{}{"foo3": "bar3", "foo4": "bar4", "custom": "1"},
+	})
+
+	if err != nil {
+		t.Errorf("Request errors. (%v)", err)
+	}
+
+	fmt.Println(resp2)
+}
+
+func TestHttpClient_GetCookieJar(t *testing.T) {
+	jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+
+	client := NewHttpClient()
+	resp1, err := client.Get("https://live.kuaishou.com/profile/3xr4nqdfsbgxyy6", &HttpRequest{
+		Headers: map[string]interface{}{
+			"Content-Type": "application/json",
+			"Referer":      "https://live.kuaishou.com",
+		},
+		CookieJar: jar,
 	})
 
 	if err != nil {
