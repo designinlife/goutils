@@ -258,6 +258,10 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 			}
 
 			switch r.XML.(type) {
+			case string:
+				req.Body = ioutil.NopCloser(strings.NewReader(r.XML.(string)))
+			case []byte:
+				req.Body = ioutil.NopCloser(bytes.NewReader(r.XML.([]byte)))
 			case map[string]string:
 				b, err := map2XML(r.XML.(map[string]string))
 				if err == nil {
