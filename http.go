@@ -83,6 +83,12 @@ func (h HttpResponse) ToString() string {
 }
 
 func (h HttpResponse) ToFile(filename string) error {
+	dirname := filepath.Dir(filename)
+
+	if !IsDir(dirname) {
+		os.MkdirAll(dirname, 0755)
+	}
+
 	return ioutil.WriteFile(filename, h.Body, 0644)
 }
 
