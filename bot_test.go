@@ -24,7 +24,7 @@ func TestFeishuCardMessage(t *testing.T) {
 	msg := NewFeishuCardMessage("This is an title.")
 	msg.AddLineContent("这是内容")
 	msg.AddSplitLine()
-	// msg.AddButton("按钮", "https://www.163.com")
+	msg.AddButton("按钮", "https://www.163.com")
 
 	t.Logf("%s", msg)
 }

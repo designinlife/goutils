@@ -127,9 +127,9 @@ type feishuCardMessageElementAction struct {
 		Content string `json:"content"`
 		Tag     string `json:"tag"`
 	} `json:"text"`
-	URL   string      `json:"url"`
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
+	URL   string   `json:"url"`
+	Type  string   `json:"type"`
+	Value struct{} `json:"value"`
 }
 
 type FeishuCardMessage struct {
