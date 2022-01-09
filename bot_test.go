@@ -5,12 +5,9 @@ import (
 )
 
 func TestFeishuTextMessage(t *testing.T) {
-	msg, err := NewFeishuTextMessage("This is an content.")
-	if err != nil {
-		t.Error(err)
-	}
+	msg := NewFeishuTextMessage("This is an content.")
 
-	t.Log(string(msg))
+	t.Logf("%s", msg)
 }
 
 func TestFeishuRichMessage(t *testing.T) {
@@ -19,6 +16,15 @@ func TestFeishuRichMessage(t *testing.T) {
 	msg.AddText("这是内容")
 	msg.AddAt("@designinlife")
 	msg.AddHref("网易", "https://www.163.com")
+
+	t.Logf("%s", msg)
+}
+
+func TestFeishuCardMessage(t *testing.T) {
+	msg := NewFeishuCardMessage("This is an title.")
+	msg.AddLineContent("这是内容")
+	msg.AddSplitLine()
+	// msg.AddButton("按钮", "https://www.163.com")
 
 	t.Logf("%s", msg)
 }

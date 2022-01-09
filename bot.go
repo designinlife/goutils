@@ -112,6 +112,98 @@ func (s *FeishuRichMessage) AddAt(userId string) {
 	})
 }
 
+type feishuCardMessageElement struct {
+	Tag  string `json:"tag"`
+	Text struct {
+		Content string `json:"content"`
+		Tag     string `json:"tag"`
+	} `json:"text,omitempty"`
+	Actions []feishuCardMessageElementAction `json:"actions,omitempty"`
+}
+
+type feishuCardMessageElementAction struct {
+	Tag  string `json:"tag"`
+	Text struct {
+		Content string `json:"content"`
+		Tag     string `json:"tag"`
+	} `json:"text"`
+	URL   string      `json:"url"`
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
+type FeishuCardMessage struct {
+	FeishuMessage
+	Card struct {
+		Config struct {
+			WideScreenMode bool `json:"wide_screen_mode"`
+			EnableForward  bool `json:"enable_forward"`
+		} `json:"config"`
+		Elements []feishuCardMessageElement `json:"elements"`
+		Header   struct {
+			Title struct {
+				Content string `json:"content"`
+				Tag     string `json:"tag"`
+			} `json:"title"`
+		} `json:"header"`
+	} `json:"card"`
+}
+
+func (s *FeishuCardMessage) String() string {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return ""
+	}
+
+	return string(v)
+}
+
+func NewFeishuCardMessage(title string) *FeishuCardMessage {
+	msg := &FeishuCardMessage{}
+	msg.MsgType = "interactive"
+	msg.Card.Config.EnableForward = true
+	msg.Card.Config.WideScreenMode = true
+	msg.Card.Header.Title.Tag = "plain_text"
+	msg.Card.Header.Title.Content = title
+
+	return msg
+}
+
+func (s *FeishuCardMessage) AddLineContent(v string) {
+	elem := feishuCardMessageElement{
+		Tag: "div",
+	}
+	elem.Text.Tag = "lark_md"
+	elem.Text.Content = v
+
+	s.Card.Elements = append(s.Card.Elements, elem)
+}
+
+func (s *FeishuCardMessage) AddSplitLine() {
+	elem := feishuCardMessageElement{
+		Tag: "hr",
+	}
+
+	s.Card.Elements = append(s.Card.Elements, elem)
+}
+
+func (s *FeishuCardMessage) AddButton(label, href string) {
+	action := feishuCardMessageElementAction{
+		Tag:  "button",
+		Type: "default",
+		URL:  href,
+	}
+	action.Text.Tag = "lark_md"
+	action.Text.Content = label
+
+	elem := feishuCardMessageElement{
+		Tag: "action",
+	}
+	elem.Actions = append(elem.Actions, action)
+
+	s.Card.Elements = append(s.Card.Elements, elem)
+}
+
 type FeishuBotSender struct {
 }
 
