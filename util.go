@@ -118,3 +118,12 @@ func IsRegularPhoneNumber(s string) bool {
 
 	return false
 }
+
+func IsTrue(v string) bool {
+	switch strings.ToLower(v) {
+	case "y", "yes", "on", "true", "1":
+		return true
+	}
+
+	return false
+}
