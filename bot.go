@@ -1,7 +1,7 @@
 package goutils
 
 import (
-	"bufio"
+	"bytes"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
@@ -674,24 +674,35 @@ func NewWxWorkImageMessage(filePath string) (*WxWorkImageMessage, error) {
 	}
 	defer file.Close()
 
-	hash := md5.New()
-	if _, err = io.Copy(hash, file); err != nil {
+	fileStat, err := file.Stat()
+	if err != nil {
 		return nil, err
 	}
-	hashInBytes := hash.Sum(nil)[:16]
-	md5Str := hex.EncodeToString(hashInBytes)
+	if fileStat.Size() > 2*1024*1024 {
+		return nil, errors.New("The maximum image (before encoding) cannot exceed 2M, and supports JPG and PNG formats.")
+	}
 
-	reader := bufio.NewReader(file)
-	content, err2 := ioutil.ReadAll(reader)
+	var buf bytes.Buffer
+	tee := io.TeeReader(file, &buf)
+
+	content, err2 := ioutil.ReadAll(tee)
 	if err2 != nil {
 		return nil, err2
 	}
 	encoded := base64.StdEncoding.EncodeToString(content)
 
+	hash := md5.New()
+	if _, err = io.Copy(hash, &buf); err != nil {
+		return nil, err
+	}
+	hashInBytes := hash.Sum(nil)
+	md5Str := hex.EncodeToString(hashInBytes)
+
 	msg := &WxWorkImageMessage{}
 	msg.Msgtype = "image"
 	msg.Image.Base64 = encoded
 	msg.Image.Md5 = md5Str
+	// msg.Image.Md5 = "e14ee653af8f0e2cf3ce74d3b211353f"
 
 	return msg, nil
 }

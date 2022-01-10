@@ -104,7 +104,7 @@ func TestWxWorkTextMessage_Send(t *testing.T) {
 }
 
 func TestWxWorkImageMessage_Send(t *testing.T) {
-	msg, err := NewWxWorkImageMessage("d:/1.jpeg")
+	msg, err := NewWxWorkImageMessage("d:/1.png")
 	if err != nil {
 		t.Error(err)
 	}
@@ -112,7 +112,6 @@ func TestWxWorkImageMessage_Send(t *testing.T) {
 	body, _ := msg.Body()
 
 	t.Logf("%s", string(body))
-	return
 
 	sender := &WxWorkBotSender{AccessToken: os.Getenv("WX_ACCESS_TOKEN")}
 	err = sender.Send(msg)
