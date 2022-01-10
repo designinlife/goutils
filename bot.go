@@ -247,8 +247,9 @@ func (s *FeishuCardMessage) AddButton(label, href string) {
 }
 
 type FeishuBotSender struct {
-	AccessToken string
-	SecretKey   string
+	AccessToken       string
+	SecretKey         string
+	TenantAccessToken string // 租户访问凭证, 用于上传图片
 }
 
 func (s *FeishuBotSender) sign(v interface{}) error {
@@ -281,6 +282,62 @@ func (s *FeishuBotSender) sign(v interface{}) error {
 	}
 
 	return nil
+}
+
+func (s *FeishuBotSender) UploadImage(filename string) (string, error) {
+	if !IsFile(filename) {
+		return "", errors.New("Source file does not exist.")
+	}
+
+	file, _ := os.Open(filename)
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("image", filepath.Base(file.Name()))
+	if _, err := io.Copy(part, file); err != nil {
+		return "", err
+	}
+	writer.WriteField("image_type", "message")
+	defer writer.Close()
+
+	r, _ := http.NewRequest("POST", "https://open.feishu.cn/open-apis/im/v1/images", body)
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.TenantAccessToken))
+	r.Header.Add("Content-Type", writer.FormDataContentType())
+	client := &http.Client{}
+	resp, err := client.Do(r)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != 200 {
+		return "", errors.Errorf("Response status error: %d", resp.StatusCode)
+	}
+
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// fmt.Println(fmt.Sprintf("Result: %s", string(content)))
+	logger.Debugf("Result: %s", string(content))
+
+	r1 := struct {
+		Errcode   int    `json:"errcode"`
+		Errmsg    string `json:"errmsg"`
+		Type      string `json:"type"`
+		MediaID   string `json:"media_id"`
+		CreatedAt string `json:"created_at"`
+	}{}
+
+	if err = json.Unmarshal(content, &r1); err != nil {
+		return "", err
+	}
+
+	if r1.Errcode != 0 {
+		return "", errors.Errorf("Upload error: %s (%d)", r1.Errmsg, r1.Errcode)
+	}
+
+	return r1.MediaID, nil
 }
 
 func (s *FeishuBotSender) Send(v BotMessage) error {
@@ -941,7 +998,7 @@ func (s *WxWorkBotSender) UploadMedia(filename string) (string, error) {
 	if _, err := io.Copy(part, file); err != nil {
 		return "", err
 	}
-	writer.Close()
+	defer writer.Close()
 
 	writer.WriteField("filename", fileName)
 	writer.WriteField("filelength", fmt.Sprintf("%d", fileSize))
