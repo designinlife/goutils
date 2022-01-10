@@ -759,6 +759,132 @@ func NewWxWorkFileMessage(mediaId string) *WxWorkFileMessage {
 	return msg
 }
 
+type WxWorkTextNoticeMessage struct {
+	Msgtype      string `json:"msgtype"`
+	TemplateCard struct {
+		CardType string `json:"card_type"`
+		Source   struct {
+			IconURL   string `json:"icon_url,omitempty"`
+			Desc      string `json:"desc,omitempty"`
+			DescColor int    `json:"desc_color,omitempty"`
+		} `json:"source,omitempty"`
+		MainTitle struct {
+			Title string `json:"title,omitempty"`
+			Desc  string `json:"desc,omitempty"`
+		} `json:"main_title"`
+		EmphasisContent struct {
+			Title string `json:"title,omitempty"`
+			Desc  string `json:"desc,omitempty"`
+		} `json:"emphasis_content,omitempty"`
+		QuoteArea struct {
+			Type      int    `json:"type,omitempty"`
+			URL       string `json:"url,omitempty"`
+			Appid     string `json:"appid,omitempty"`
+			Pagepath  string `json:"pagepath,omitempty"`
+			Title     string `json:"title,omitempty"`
+			QuoteText string `json:"quote_text,omitempty"`
+		} `json:"quote_area,omitempty"`
+		SubTitleText          string `json:"sub_title_text,omitempty"`
+		HorizontalContentList []struct {
+			Keyname string `json:"keyname"`
+			Value   string `json:"value,omitempty"`
+			Type    int    `json:"type,omitempty"`
+			URL     string `json:"url,omitempty"`
+			MediaID string `json:"media_id,omitempty"`
+		} `json:"horizontal_content_list,omitempty"`
+		JumpList []struct {
+			Type     int    `json:"type,omitempty"`
+			URL      string `json:"url,omitempty"`
+			Title    string `json:"title"`
+			Appid    string `json:"appid,omitempty"`
+			Pagepath string `json:"pagepath,omitempty"`
+		} `json:"jump_list,omitempty"`
+		CardAction struct {
+			Type     int    `json:"type"`
+			URL      string `json:"url,omitempty"`
+			Appid    string `json:"appid,omitempty"`
+			Pagepath string `json:"pagepath,omitempty"`
+		} `json:"card_action"`
+	} `json:"template_card"`
+}
+
+func (s *WxWorkTextNoticeMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+type WxWorkNewsNoticeMessage struct {
+	Msgtype      string `json:"msgtype"`
+	TemplateCard struct {
+		CardType string `json:"card_type"`
+		Source   struct {
+			IconURL   string `json:"icon_url,omitempty"`
+			Desc      string `json:"desc,omitempty"`
+			DescColor int    `json:"desc_color,omitempty"`
+		} `json:"source,omitempty"`
+		MainTitle struct {
+			Title string `json:"title"`
+			Desc  string `json:"desc,omitempty"`
+		} `json:"main_title"`
+		CardImage struct {
+			URL         string  `json:"url"`
+			AspectRatio float64 `json:"aspect_ratio,omitempty"`
+		} `json:"card_image"`
+		ImageTextArea struct {
+			Type     int    `json:"type,omitempty"`
+			URL      string `json:"url,omitempty"`
+			Title    string `json:"title,omitempty"`
+			Desc     string `json:"desc,omitempty"`
+			ImageURL string `json:"image_url"`
+		} `json:"image_text_area,omitempty"`
+		QuoteArea struct {
+			Type      int    `json:"type,omitempty"`
+			URL       string `json:"url,omitempty"`
+			Appid     string `json:"appid,omitempty"`
+			Pagepath  string `json:"pagepath,omitempty"`
+			Title     string `json:"title,omitempty"`
+			QuoteText string `json:"quote_text,omitempty"`
+		} `json:"quote_area,omitempty"`
+		VerticalContentList []struct {
+			Title string `json:"title"`
+			Desc  string `json:"desc,omitempty"`
+		} `json:"vertical_content_list,omitempty"`
+		HorizontalContentList []struct {
+			Keyname string `json:"keyname"`
+			Value   string `json:"value,omitempty"`
+			Type    int    `json:"type,omitempty"`
+			URL     string `json:"url,omitempty"`
+			MediaID string `json:"media_id,omitempty"`
+		} `json:"horizontal_content_list,omitempty"`
+		JumpList []struct {
+			Type     int    `json:"type,omitempty"`
+			URL      string `json:"url,omitempty"`
+			Title    string `json:"title"`
+			Appid    string `json:"appid,omitempty"`
+			Pagepath string `json:"pagepath,omitempty"`
+		} `json:"jump_list,omitempty"`
+		CardAction struct {
+			Type     int    `json:"type"`
+			URL      string `json:"url,omitempty"`
+			Appid    string `json:"appid,omitempty"`
+			Pagepath string `json:"pagepath,omitempty"`
+		} `json:"card_action"`
+	} `json:"template_card"`
+}
+
+func (s *WxWorkNewsNoticeMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 type WxWorkBotSender struct {
 	AccessToken string
 }
