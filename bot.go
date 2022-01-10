@@ -551,3 +551,46 @@ func (s *DingtalkBotSender) Send(v BotMessage) error {
 
 	return nil
 }
+
+type WxWorkTextMessage struct {
+	Msgtype string `json:"msgtype"`
+	Text    struct {
+		Content             string   `json:"content"`
+		MentionedList       []string `json:"mentioned_list"`
+		MentionedMobileList []string `json:"mentioned_mobile_list"`
+	} `json:"text"`
+}
+
+type WxWorkMarkdownMessage struct {
+	Msgtype  string `json:"msgtype"`
+	Markdown struct {
+		Content string `json:"content"`
+	} `json:"markdown"`
+}
+
+type WxWorkImageMessage struct {
+	Msgtype string `json:"msgtype"`
+	Image   struct {
+		Base64 string `json:"base64"`
+		Md5    string `json:"md5"`
+	} `json:"image"`
+}
+
+type WxWorkNewsMessage struct {
+	Msgtype string `json:"msgtype"`
+	News    struct {
+		Articles []struct {
+			Title       string `json:"title"`
+			Description string `json:"description"`
+			URL         string `json:"url"`
+			Picurl      string `json:"picurl"`
+		} `json:"articles"`
+	} `json:"news"`
+}
+
+type WxWorkFileMessage struct {
+	Msgtype string `json:"msgtype"`
+	File    struct {
+		MediaID string `json:"media_id"`
+	} `json:"file"`
+}
