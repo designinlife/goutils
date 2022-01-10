@@ -312,6 +312,33 @@ type DingtalkTextMessage struct {
 	Msgtype string `json:"msgtype"`
 }
 
+func NewDingtalkTextMessage(title, content string, atAll bool) *DingtalkTextMessage {
+	msg := &DingtalkTextMessage{}
+	msg.Msgtype = "text"
+	if title != "" {
+		msg.Text.Content = fmt.Sprintf("%s\n%s", title, content)
+	} else {
+		msg.Text.Content = content
+	}
+	if atAll {
+		msg.At.IsAtAll = true
+	}
+
+	return msg
+}
+
+func (s *DingtalkTextMessage) AtMobiles(mobiles ...string) {
+	if !s.At.IsAtAll {
+		s.At.AtMobiles = append(s.At.AtMobiles, mobiles...)
+	}
+}
+
+func (s *DingtalkTextMessage) AtUserIds(userIds ...string) {
+	if !s.At.IsAtAll {
+		s.At.AtMobiles = append(s.At.AtMobiles, userIds...)
+	}
+}
+
 func (s *DingtalkTextMessage) Body() ([]byte, error) {
 	v, err := json.Marshal(s)
 	if err != nil {
