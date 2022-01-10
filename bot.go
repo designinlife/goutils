@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	logger "github.com/sirupsen/logrus"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -274,13 +275,16 @@ func (s *FeishuBotSender) sign(v interface{}) error {
 }
 
 func (s *FeishuBotSender) Send(v BotMessage) error {
+	if s.AccessToken == "" {
+		return errors.New("Access token is invalid.")
+	}
+
 	s.sign(v)
 
 	data, err := v.Body()
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("Data: %s", string(data)))
 
 	client := NewHttpClient()
 	resp, err := client.Post(fmt.Sprintf("https://open.feishu.cn/open-apis/bot/v2/hook/%s", s.AccessToken), &HttpRequest{
@@ -507,32 +511,36 @@ func (s *DingtalkFeedCardMessage) Body() ([]byte, error) {
 }
 
 func (s *DingtalkBotSender) Send(v BotMessage) error {
+	if s.AccessToken == "" {
+		return errors.New("Access token is invalid.")
+	}
+
 	data, err := v.Body()
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("Data: %s", string(data)))
 
-	var dingtalkApiUrl string
+	value := url.Values{}
 
 	if s.SecretKey != "" {
-		timestamp := time.Now().Unix()
-		stringToSign := fmt.Sprintf("%v", timestamp) + "\n" + s.SecretKey
-		var data []byte
-		h := hmac.New(sha256.New, []byte(stringToSign))
-		_, err := h.Write(data)
+		timestamp := time.Now().UnixNano() / 1e6
+		stringToSign := fmt.Sprintf("%d\n%s", timestamp, s.SecretKey)
+		h := hmac.New(sha256.New, []byte(s.SecretKey))
+		_, err := h.Write([]byte(stringToSign))
 		if err != nil {
 			return err
 		}
 		signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
-		dingtalkApiUrl = fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s&timestamp=%s&sign=%s", s.AccessToken, strconv.FormatInt(timestamp, 10), signature)
+		value.Set("access_token", s.AccessToken)
+		value.Set("timestamp", fmt.Sprintf("%d", timestamp))
+		value.Set("sign", signature)
 	} else {
-		dingtalkApiUrl = fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s", s.AccessToken)
+		value.Set("access_token", s.AccessToken)
 	}
 
 	client := NewHttpClient()
-	resp, err := client.Post(dingtalkApiUrl, &HttpRequest{
+	resp, err := client.Post(fmt.Sprintf("https://oapi.dingtalk.com/robot/send?%s", value.Encode()), &HttpRequest{
 		JSON: data,
 	})
 	if err != nil {

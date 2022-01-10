@@ -72,3 +72,17 @@ func TestFeishuCardMessage_Send(t *testing.T) {
 
 	t.Logf("%s", msg)
 }
+
+func TestDingtalkTextMessage_Send(t *testing.T) {
+	msg := NewDingtalkTextMessage("", "This is an content.", false)
+
+	body, _ := msg.Body()
+
+	t.Logf("%s", string(body))
+
+	sender := &DingtalkBotSender{AccessToken: os.Getenv("DT_ACCESS_TOKEN"), SecretKey: os.Getenv("DT_SECRET_KEY")}
+	err := sender.Send(msg)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+}
