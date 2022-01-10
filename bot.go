@@ -394,6 +394,31 @@ type DingtalkMarkdownMessage struct {
 	} `json:"at,omitempty"`
 }
 
+func NewDingtalkMarkdownMessage(title, content string, atAll bool) *DingtalkMarkdownMessage {
+	msg := &DingtalkMarkdownMessage{}
+	msg.Msgtype = "markdown"
+	msg.Markdown.Title = title
+	msg.Markdown.Text = content
+
+	if atAll {
+		msg.At.IsAtAll = true
+	}
+
+	return msg
+}
+
+func (s *DingtalkMarkdownMessage) AtMobiles(mobiles ...string) {
+	if !s.At.IsAtAll {
+		s.At.AtMobiles = append(s.At.AtMobiles, mobiles...)
+	}
+}
+
+func (s *DingtalkMarkdownMessage) AtUserIds(userIds ...string) {
+	if !s.At.IsAtAll {
+		s.At.AtMobiles = append(s.At.AtMobiles, userIds...)
+	}
+}
+
 func (s *DingtalkMarkdownMessage) Body() ([]byte, error) {
 	v, err := json.Marshal(s)
 	if err != nil {
