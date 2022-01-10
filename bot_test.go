@@ -33,6 +33,8 @@ func TestFeishuCardMessage(t *testing.T) {
 func TestFeishuTextMessage_Send(t *testing.T) {
 	msg := NewFeishuTextMessage("This is an content.")
 
+	// logger.SetLevel(logger.DebugLevel)
+
 	sender := &FeishuBotSender{AccessToken: os.Getenv("FS_ACCESS_TOKEN"), SecretKey: os.Getenv("FS_SECRET_KEY")}
 	err := sender.Send(msg)
 	if err != nil {

@@ -280,6 +280,16 @@ func (s *FeishuBotSender) sign(v interface{}) error {
 	return nil
 }
 
+type feishuRespSuccess struct {
+	StatusCode    int    `json:"StatusCode"`
+	StatusMessage string `json:"StatusMessage"`
+}
+
+type feishuRespFailure struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
 func (s *FeishuBotSender) Send(v BotMessage) error {
 	if s.AccessToken == "" {
 		return errors.New("Access token is invalid.")
@@ -298,6 +308,23 @@ func (s *FeishuBotSender) Send(v BotMessage) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	r1 := struct {
+		StatusCode    int    `json:"StatusCode"`
+		StatusMessage string `json:"StatusMessage"`
+		Code          int    `json:"code"`
+		Msg           string `json:"msg"`
+	}{}
+
+	// logger.Debugf("Response: %v", resp)
+
+	if err = json.Unmarshal(resp.Body, &r1); err != nil {
+		return errors.Errorf("Response parse error: %v", err)
+	}
+
+	if r1.Code != 0 {
+		return errors.Errorf("%s (%d)", r1.Msg, r1.Code)
 	}
 
 	logger.Debugf("Response: %v", resp)
@@ -551,6 +578,19 @@ func (s *DingtalkBotSender) Send(v BotMessage) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	r1 := struct {
+		Errcode int    `json:"errcode"`
+		Errmsg  string `json:"errmsg"`
+	}{}
+
+	if err = json.Unmarshal(resp.Body, &r1); err != nil {
+		return err
+	}
+
+	if r1.Errcode != 0 {
+		return errors.Errorf("%s (%d)", r1.Errmsg, r1.Errcode)
 	}
 
 	logger.Debugf("Response: %v", resp)
