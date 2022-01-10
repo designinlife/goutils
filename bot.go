@@ -280,16 +280,6 @@ func (s *FeishuBotSender) sign(v interface{}) error {
 	return nil
 }
 
-type feishuRespSuccess struct {
-	StatusCode    int    `json:"StatusCode"`
-	StatusMessage string `json:"StatusMessage"`
-}
-
-type feishuRespFailure struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-}
-
 func (s *FeishuBotSender) Send(v BotMessage) error {
 	if s.AccessToken == "" {
 		return errors.New("Access token is invalid.")
