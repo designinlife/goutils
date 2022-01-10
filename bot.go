@@ -1,31 +1,48 @@
 package goutils
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"github.com/pkg/errors"
+	logger "github.com/sirupsen/logrus"
+	"strconv"
+	"time"
 )
 
 type BotSender interface {
-	Send(v []byte) error
+	Send(v BotMessage) error
+}
+
+type BotMessage interface {
+	Body() ([]byte, error)
 }
 
 type DingtalkBotSender struct {
 }
 
-func (s *DingtalkBotSender) Send(v []byte) error {
-	return nil
-}
-
-type FeishuMessage struct {
+type feishuMessage struct {
 	Timestamp string `json:"timestamp,omitempty"`
 	Sign      string `json:"sign,omitempty"`
 	MsgType   string `json:"msg_type"`
 }
 
 type FeishuTextMessage struct {
-	FeishuMessage
+	feishuMessage
 	Content struct {
 		Text string `json:"text"`
 	} `json:"content"`
+}
+
+func (s *FeishuTextMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
 
 func (s *FeishuTextMessage) String() string {
@@ -54,7 +71,7 @@ type feishuRichMessageContent struct {
 }
 
 type FeishuRichMessage struct {
-	FeishuMessage
+	feishuMessage
 	Content struct {
 		Post struct {
 			ZhCn struct {
@@ -64,6 +81,15 @@ type FeishuRichMessage struct {
 		} `json:"post"`
 	} `json:"content"`
 	ContentPosition int `json:"-"`
+}
+
+func (s *FeishuRichMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
 
 func (s *FeishuRichMessage) String() string {
@@ -133,7 +159,7 @@ type feishuCardMessageElementAction struct {
 }
 
 type FeishuCardMessage struct {
-	FeishuMessage
+	feishuMessage
 	Card struct {
 		Config struct {
 			WideScreenMode bool `json:"wide_screen_mode"`
@@ -147,6 +173,15 @@ type FeishuCardMessage struct {
 			} `json:"title"`
 		} `json:"header"`
 	} `json:"card"`
+}
+
+func (s *FeishuCardMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
 
 func (s *FeishuCardMessage) String() string {
@@ -205,8 +240,60 @@ func (s *FeishuCardMessage) AddButton(label, href string) {
 }
 
 type FeishuBotSender struct {
+	AccessToken string
+	SecretKey   string
 }
 
-func (s *FeishuBotSender) Send(v []byte) error {
+func (s *FeishuBotSender) Sign(v interface{}) error {
+	if s.SecretKey == "" {
+		return nil
+	}
+
+	timestamp := time.Now().Unix()
+	stringToSign := fmt.Sprintf("%v", timestamp) + "\n" + s.SecretKey
+	var data []byte
+	h := hmac.New(sha256.New, []byte(stringToSign))
+	_, err := h.Write(data)
+	if err != nil {
+		return err
+	}
+	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	switch vtype := v.(type) {
+	case *FeishuCardMessage:
+		vtype.Timestamp = strconv.FormatInt(timestamp, 10)
+		vtype.Sign = signature
+	case *FeishuRichMessage:
+		vtype.Timestamp = strconv.FormatInt(timestamp, 10)
+		vtype.Sign = signature
+	case *FeishuTextMessage:
+		vtype.Timestamp = strconv.FormatInt(timestamp, 10)
+		vtype.Sign = signature
+	default:
+		return errors.New("非法的类型参数。")
+	}
+
+	return nil
+}
+
+func (s *FeishuBotSender) Send(v BotMessage) error {
+	s.Sign(v)
+
+	data, err := v.Body()
+	if err != nil {
+		return err
+	}
+	fmt.Println(fmt.Sprintf("Data: %s", string(data)))
+
+	client := NewHttpClient()
+	resp, err := client.Post(fmt.Sprintf("https://open.feishu.cn/open-apis/bot/v2/hook/%s", s.AccessToken), &HttpRequest{
+		JSON: data,
+	})
+	if err != nil {
+		return err
+	}
+
+	logger.Debugf("Response: %v", resp)
+
 	return nil
 }
