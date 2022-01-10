@@ -668,6 +668,10 @@ func (s *WxWorkImageMessage) Body() ([]byte, error) {
 }
 
 func NewWxWorkImageMessage(filePath string) (*WxWorkImageMessage, error) {
+	if !IsFile(filePath) {
+		return nil, errors.New("Source file does not exist.")
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
