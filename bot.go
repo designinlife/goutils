@@ -20,9 +20,6 @@ type BotMessage interface {
 	Body() ([]byte, error)
 }
 
-type DingtalkBotSender struct {
-}
-
 type feishuMessage struct {
 	Timestamp string `json:"timestamp,omitempty"`
 	Sign      string `json:"sign,omitempty"`
@@ -244,7 +241,7 @@ type FeishuBotSender struct {
 	SecretKey   string
 }
 
-func (s *FeishuBotSender) Sign(v interface{}) error {
+func (s *FeishuBotSender) sign(v interface{}) error {
 	if s.SecretKey == "" {
 		return nil
 	}
@@ -277,7 +274,7 @@ func (s *FeishuBotSender) Sign(v interface{}) error {
 }
 
 func (s *FeishuBotSender) Send(v BotMessage) error {
-	s.Sign(v)
+	s.sign(v)
 
 	data, err := v.Body()
 	if err != nil {
@@ -287,6 +284,108 @@ func (s *FeishuBotSender) Send(v BotMessage) error {
 
 	client := NewHttpClient()
 	resp, err := client.Post(fmt.Sprintf("https://open.feishu.cn/open-apis/bot/v2/hook/%s", s.AccessToken), &HttpRequest{
+		JSON: data,
+	})
+	if err != nil {
+		return err
+	}
+
+	logger.Debugf("Response: %v", resp)
+
+	return nil
+}
+
+type DingtalkBotSender struct {
+	AccessToken string
+	SecretKey   string
+}
+
+type DingtalkTextMessage struct {
+	At struct {
+		AtMobiles []string `json:"atMobiles,omitempty"`
+		AtUserIds []string `json:"atUserIds,omitempty"`
+		IsAtAll   bool     `json:"isAtAll,omitempty"`
+	} `json:"at,omitempty"`
+	Text struct {
+		Content string `json:"content"`
+	} `json:"text"`
+	Msgtype string `json:"msgtype"`
+}
+
+type DingtalkLinkMessage struct {
+	Msgtype string `json:"msgtype"`
+	Link    struct {
+		Text       string `json:"text"`
+		Title      string `json:"title"`
+		PicURL     string `json:"picUrl"`
+		MessageURL string `json:"messageUrl"`
+	} `json:"link"`
+}
+
+type DingtalkMarkdownMessage struct {
+	Msgtype  string `json:"msgtype"`
+	Markdown struct {
+		Title string `json:"title"`
+		Text  string `json:"text"`
+	} `json:"markdown"`
+	At struct {
+		AtMobiles []string `json:"atMobiles,omitempty"`
+		AtUserIds []string `json:"atUserIds,omitempty"`
+		IsAtAll   bool     `json:"isAtAll,omitempty"`
+	} `json:"at,omitempty"`
+}
+
+type DingtalkActionCardMessage struct {
+	Msgtype    string `json:"msgtype"`
+	ActionCard struct {
+		Title          string `json:"title"`
+		Text           string `json:"text"`
+		BtnOrientation string `json:"btnOrientation,omitempty"`
+		Btns           []struct {
+			Title     string `json:"title"`
+			ActionURL string `json:"actionURL"`
+		} `json:"btns"`
+	} `json:"actionCard"`
+}
+
+type DingtalkFeedCardMessage struct {
+	Msgtype  string `json:"msgtype"`
+	FeedCard struct {
+		Links []struct {
+			Title      string `json:"title"`
+			MessageURL string `json:"messageURL"`
+			PicURL     string `json:"picURL"`
+		} `json:"links"`
+	} `json:"feedCard"`
+}
+
+func (s *DingtalkBotSender) Send(v BotMessage) error {
+	data, err := v.Body()
+	if err != nil {
+		return err
+	}
+	fmt.Println(fmt.Sprintf("Data: %s", string(data)))
+
+	var dingtalkApiUrl string
+
+	if s.SecretKey != "" {
+		timestamp := time.Now().Unix()
+		stringToSign := fmt.Sprintf("%v", timestamp) + "\n" + s.SecretKey
+		var data []byte
+		h := hmac.New(sha256.New, []byte(stringToSign))
+		_, err := h.Write(data)
+		if err != nil {
+			return err
+		}
+		signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+		dingtalkApiUrl = fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s&timestamp=%s&sign=%s", s.AccessToken, strconv.FormatInt(timestamp, 10), signature)
+	} else {
+		dingtalkApiUrl = fmt.Sprintf("https://oapi.dingtalk.com/robot/send?access_token=%s", s.AccessToken)
+	}
+
+	client := NewHttpClient()
+	resp, err := client.Post(dingtalkApiUrl, &HttpRequest{
 		JSON: data,
 	})
 	if err != nil {
