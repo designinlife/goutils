@@ -312,6 +312,15 @@ type DingtalkTextMessage struct {
 	Msgtype string `json:"msgtype"`
 }
 
+func (s *DingtalkTextMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 type DingtalkLinkMessage struct {
 	Msgtype string `json:"msgtype"`
 	Link    struct {
@@ -320,6 +329,15 @@ type DingtalkLinkMessage struct {
 		PicURL     string `json:"picUrl"`
 		MessageURL string `json:"messageUrl"`
 	} `json:"link"`
+}
+
+func (s *DingtalkLinkMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
 
 type DingtalkMarkdownMessage struct {
@@ -335,6 +353,15 @@ type DingtalkMarkdownMessage struct {
 	} `json:"at,omitempty"`
 }
 
+func (s *DingtalkMarkdownMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 type DingtalkActionCardMessage struct {
 	Msgtype    string `json:"msgtype"`
 	ActionCard struct {
@@ -348,6 +375,15 @@ type DingtalkActionCardMessage struct {
 	} `json:"actionCard"`
 }
 
+func (s *DingtalkActionCardMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
 type DingtalkFeedCardMessage struct {
 	Msgtype  string `json:"msgtype"`
 	FeedCard struct {
@@ -357,6 +393,15 @@ type DingtalkFeedCardMessage struct {
 			PicURL     string `json:"picURL"`
 		} `json:"links"`
 	} `json:"feedCard"`
+}
+
+func (s *DingtalkFeedCardMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
 }
 
 func (s *DingtalkBotSender) Send(v BotMessage) error {
