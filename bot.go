@@ -1,14 +1,20 @@
 package goutils
 
 import (
+	"bufio"
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	logger "github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 )
@@ -561,11 +567,57 @@ type WxWorkTextMessage struct {
 	} `json:"text"`
 }
 
+func (s *WxWorkTextMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func NewWxWorkTextMessage(content string) *WxWorkTextMessage {
+	msg := &WxWorkTextMessage{}
+	msg.Msgtype = "text"
+	msg.Text.Content = content
+
+	return msg
+}
+
+func (s *WxWorkTextMessage) AtAll() {
+	s.Text.MentionedList = append(s.Text.MentionedList, "@all")
+}
+
+func (s *WxWorkTextMessage) AtUserIds(userIds ...string) {
+	s.Text.MentionedList = append(s.Text.MentionedList, userIds...)
+}
+
+func (s *WxWorkTextMessage) AtMobiles(mobiles ...string) {
+	s.Text.MentionedMobileList = append(s.Text.MentionedMobileList, mobiles...)
+}
+
 type WxWorkMarkdownMessage struct {
 	Msgtype  string `json:"msgtype"`
 	Markdown struct {
 		Content string `json:"content"`
 	} `json:"markdown"`
+}
+
+func (s *WxWorkMarkdownMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func NewWxWorkMarkdownMessage(content string) *WxWorkMarkdownMessage {
+	msg := &WxWorkMarkdownMessage{}
+	msg.Msgtype = "markdown"
+	msg.Markdown.Content = content
+
+	return msg
 }
 
 type WxWorkImageMessage struct {
@@ -576,16 +628,81 @@ type WxWorkImageMessage struct {
 	} `json:"image"`
 }
 
+func (s *WxWorkImageMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func NewWxWorkImageMessage(filePath string) (*WxWorkImageMessage, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err = io.Copy(hash, file); err != nil {
+		return nil, err
+	}
+	hashInBytes := hash.Sum(nil)[:16]
+	md5Str := hex.EncodeToString(hashInBytes)
+
+	reader := bufio.NewReader(file)
+	content, err2 := ioutil.ReadAll(reader)
+	if err2 != nil {
+		return nil, err2
+	}
+	encoded := base64.StdEncoding.EncodeToString(content)
+
+	msg := &WxWorkImageMessage{}
+	msg.Msgtype = "image"
+	msg.Image.Base64 = encoded
+	msg.Image.Md5 = md5Str
+
+	return msg, nil
+}
+
 type WxWorkNewsMessage struct {
 	Msgtype string `json:"msgtype"`
 	News    struct {
-		Articles []struct {
-			Title       string `json:"title"`
-			Description string `json:"description"`
-			URL         string `json:"url"`
-			Picurl      string `json:"picurl"`
-		} `json:"articles"`
+		Articles []wxWorkNewsMessageArticle `json:"articles"`
 	} `json:"news"`
+}
+
+type wxWorkNewsMessageArticle struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	Picurl      string `json:"picurl"`
+}
+
+func (s *WxWorkNewsMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func (s *WxWorkNewsMessage) AddArticle(title, description, url, picurl string) {
+	s.News.Articles = append(s.News.Articles, wxWorkNewsMessageArticle{
+		Title:       title,
+		Description: description,
+		URL:         url,
+		Picurl:      picurl,
+	})
+}
+
+func NewWxWorkNewsMessage() *WxWorkNewsMessage {
+	msg := &WxWorkNewsMessage{}
+	msg.Msgtype = "news"
+
+	return msg
 }
 
 type WxWorkFileMessage struct {
@@ -593,4 +710,51 @@ type WxWorkFileMessage struct {
 	File    struct {
 		MediaID string `json:"media_id"`
 	} `json:"file"`
+}
+
+func (s *WxWorkFileMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func NewWxWorkFileMessage(mediaId string) *WxWorkFileMessage {
+	msg := &WxWorkFileMessage{}
+	msg.Msgtype = "file"
+	msg.File.MediaID = mediaId
+
+	return msg
+}
+
+type WxWorkBotSender struct {
+	AccessToken string
+}
+
+func (s *WxWorkBotSender) Send(v BotMessage) error {
+	if s.AccessToken == "" {
+		return errors.New("Access token is invalid.")
+	}
+
+	data, err := v.Body()
+	if err != nil {
+		return err
+	}
+
+	value := url.Values{}
+	value.Set("key", s.AccessToken)
+
+	client := NewHttpClient()
+	resp, err := client.Post(fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?%s", value.Encode()), &HttpRequest{
+		JSON: data,
+	})
+	if err != nil {
+		return err
+	}
+
+	logger.Debugf("Response: %v", resp)
+
+	return nil
 }
