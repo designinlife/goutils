@@ -784,6 +784,19 @@ func (s *WxWorkBotSender) Send(v BotMessage) error {
 		return err
 	}
 
+	r1 := struct {
+		Errcode int    `json:"errcode"`
+		Errmsg  string `json:"errmsg"`
+	}{}
+
+	if err = json.Unmarshal(resp.Body, &r1); err != nil {
+		return err
+	}
+
+	if r1.Errcode != 0 {
+		return errors.Errorf("%s (%d)", r1.Errmsg, r1.Errcode)
+	}
+
 	logger.Debugf("Response: %v", resp)
 
 	return nil
