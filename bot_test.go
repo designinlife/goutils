@@ -106,7 +106,7 @@ func TestWxWorkTextMessage_Send(t *testing.T) {
 func TestWxWorkImageMessage_Send(t *testing.T) {
 	msg, err := NewWxWorkImageMessage("d:/1.png")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	body, _ := msg.Body()

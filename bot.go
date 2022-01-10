@@ -683,7 +683,7 @@ func NewWxWorkImageMessage(filePath string) (*WxWorkImageMessage, error) {
 		return nil, err
 	}
 	if fileStat.Size() > 2*1024*1024 {
-		return nil, errors.New("The maximum image (before encoding) cannot exceed 2M, and supports JPG and PNG formats.")
+		return nil, errors.New("The maximum image (before encoding) cannot exceed 2Mb, and supports JPG and PNG formats.")
 	}
 
 	var buf bytes.Buffer
