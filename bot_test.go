@@ -88,3 +88,17 @@ func TestDingtalkTextMessage_Send(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 }
+
+func TestWxWorkTextMessage_Send(t *testing.T) {
+	msg := NewWxWorkTextMessage("This is an content.")
+
+	body, _ := msg.Body()
+
+	t.Logf("%s", string(body))
+
+	sender := &WxWorkBotSender{AccessToken: os.Getenv("WX_ACCESS_TOKEN")}
+	err := sender.Send(msg)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+}
