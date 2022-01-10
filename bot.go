@@ -431,14 +431,33 @@ func (s *DingtalkMarkdownMessage) Body() ([]byte, error) {
 type DingtalkActionCardMessage struct {
 	Msgtype    string `json:"msgtype"`
 	ActionCard struct {
-		Title          string `json:"title"`
-		Text           string `json:"text"`
-		BtnOrientation string `json:"btnOrientation,omitempty"`
-		Btns           []struct {
-			Title     string `json:"title"`
-			ActionURL string `json:"actionURL"`
-		} `json:"btns"`
+		Title          string                            `json:"title"`
+		Text           string                            `json:"text"`
+		BtnOrientation string                            `json:"btnOrientation,omitempty"`
+		Btns           []DingtalkActionCardMessageButton `json:"btns,omitempty"`
 	} `json:"actionCard"`
+}
+
+type DingtalkActionCardMessageButton struct {
+	Title     string `json:"title"`
+	ActionURL string `json:"actionURL"`
+}
+
+func NewDingtalkActionCardMessage(title, content string) *DingtalkActionCardMessage {
+	msg := &DingtalkActionCardMessage{}
+	msg.Msgtype = "actionCard"
+	msg.ActionCard.Title = title
+	msg.ActionCard.Text = content
+	msg.ActionCard.BtnOrientation = "0"
+
+	return msg
+}
+
+func (s *DingtalkActionCardMessage) AddButton(title, actionUrl string) {
+	s.ActionCard.Btns = append(s.ActionCard.Btns, DingtalkActionCardMessageButton{
+		Title:     title,
+		ActionURL: actionUrl,
+	})
 }
 
 func (s *DingtalkActionCardMessage) Body() ([]byte, error) {
@@ -453,12 +472,29 @@ func (s *DingtalkActionCardMessage) Body() ([]byte, error) {
 type DingtalkFeedCardMessage struct {
 	Msgtype  string `json:"msgtype"`
 	FeedCard struct {
-		Links []struct {
-			Title      string `json:"title"`
-			MessageURL string `json:"messageURL"`
-			PicURL     string `json:"picURL"`
-		} `json:"links"`
+		Links []DingtalkFeedCardMessageLink `json:"links"`
 	} `json:"feedCard"`
+}
+
+type DingtalkFeedCardMessageLink struct {
+	Title      string `json:"title"`
+	MessageURL string `json:"messageURL"`
+	PicURL     string `json:"picURL"`
+}
+
+func NewDingtalkFeedCardMessage() *DingtalkFeedCardMessage {
+	msg := &DingtalkFeedCardMessage{}
+	msg.Msgtype = "feedCard"
+
+	return msg
+}
+
+func (s *DingtalkFeedCardMessage) AddLink(title, messageURL, picURL string) {
+	s.FeedCard.Links = append(s.FeedCard.Links, DingtalkFeedCardMessageLink{
+		Title:      title,
+		MessageURL: messageURL,
+		PicURL:     picURL,
+	})
 }
 
 func (s *DingtalkFeedCardMessage) Body() ([]byte, error) {
