@@ -2,6 +2,7 @@ package goutils
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -30,4 +31,12 @@ func TestPathNormalized(t *testing.T) {
 	s := RemovePathSeparatorSuffix(PathNormalized("C:/tmp\\a////b/c\\\\"))
 
 	fmt.Println(s)
+}
+
+func TestIsTrue(t *testing.T) {
+	v := []string{"Yes", "On", "Y", "1", "True"}
+
+	for _, vv := range v {
+		assert.True(t, IsTrue(vv))
+	}
 }
