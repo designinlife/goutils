@@ -13,8 +13,11 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
+	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -832,6 +835,14 @@ func (s *WxWorkTextNoticeMessage) Body() ([]byte, error) {
 	return v, nil
 }
 
+func NewWxWorkTextNoticeMessage() *WxWorkTextNoticeMessage {
+	msg := &WxWorkTextNoticeMessage{}
+	msg.Msgtype = "template_card"
+	msg.TemplateCard.CardType = "text_notice"
+
+	return msg
+}
+
 type WxWorkNewsNoticeMessage struct {
 	Msgtype      string `json:"msgtype"`
 	TemplateCard struct {
@@ -900,8 +911,77 @@ func (s *WxWorkNewsNoticeMessage) Body() ([]byte, error) {
 	return v, nil
 }
 
+func NewWxWorkNewsNoticeMessage() *WxWorkNewsNoticeMessage {
+	msg := &WxWorkNewsNoticeMessage{}
+	msg.Msgtype = "template_card"
+	msg.TemplateCard.CardType = "news_notice"
+
+	return msg
+}
+
 type WxWorkBotSender struct {
 	AccessToken string
+}
+
+func (s *WxWorkBotSender) UploadMedia(filename string) (string, error) {
+	if !IsFile(filename) {
+		return "", errors.New("Source file does not exist.")
+	}
+
+	file, _ := os.Open(filename)
+	defer file.Close()
+	stat, _ := file.Stat()
+
+	fileName := filepath.Base(filename)
+	fileSize := stat.Size()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	if _, err := io.Copy(part, file); err != nil {
+		return "", err
+	}
+	writer.Close()
+
+	writer.WriteField("filename", fileName)
+	writer.WriteField("filelength", fmt.Sprintf("%d", fileSize))
+
+	r, _ := http.NewRequest("POST", fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key=%s&type=file", s.AccessToken), body)
+	r.Header.Add("Content-Type", writer.FormDataContentType())
+	client := &http.Client{}
+	resp, err := client.Do(r)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != 200 {
+		return "", errors.Errorf("Response status error: %d", resp.StatusCode)
+	}
+
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// fmt.Println(fmt.Sprintf("Result: %s", string(content)))
+	logger.Debugf("Result: %s", string(content))
+
+	r1 := struct {
+		Errcode   int    `json:"errcode"`
+		Errmsg    string `json:"errmsg"`
+		Type      string `json:"type"`
+		MediaID   string `json:"media_id"`
+		CreatedAt string `json:"created_at"`
+	}{}
+
+	if err = json.Unmarshal(content, &r1); err != nil {
+		return "", err
+	}
+
+	if r1.Errcode != 0 {
+		return "", errors.Errorf("Upload error: %s (%d)", r1.Errmsg, r1.Errcode)
+	}
+
+	return r1.MediaID, nil
 }
 
 func (s *WxWorkBotSender) Send(v BotMessage) error {

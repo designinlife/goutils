@@ -119,3 +119,24 @@ func TestWxWorkImageMessage_Send(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 }
+
+func TestWxWorkFileMessage_Send(t *testing.T) {
+	sender := &WxWorkBotSender{AccessToken: os.Getenv("WX_ACCESS_TOKEN")}
+	mediaId, err := sender.UploadMedia("d:/1.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("Media ID: %s", mediaId)
+
+	msg := NewWxWorkFileMessage(mediaId)
+
+	body, _ := msg.Body()
+
+	t.Logf("%s", string(body))
+
+	err = sender.Send(msg)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+}
