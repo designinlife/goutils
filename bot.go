@@ -353,9 +353,23 @@ type DingtalkLinkMessage struct {
 	Link    struct {
 		Text       string `json:"text"`
 		Title      string `json:"title"`
-		PicURL     string `json:"picUrl"`
+		PicURL     string `json:"picUrl,omitempty"`
 		MessageURL string `json:"messageUrl"`
 	} `json:"link"`
+}
+
+func NewDingtalkLinkMessage(title, content, messageUrl, picUrl string) *DingtalkLinkMessage {
+	msg := &DingtalkLinkMessage{}
+	msg.Msgtype = "link"
+	msg.Link.Title = title
+	msg.Link.Text = content
+	msg.Link.MessageURL = messageUrl
+
+	if picUrl != "" {
+		msg.Link.PicURL = picUrl
+	}
+
+	return msg
 }
 
 func (s *DingtalkLinkMessage) Body() ([]byte, error) {
