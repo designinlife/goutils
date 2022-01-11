@@ -515,6 +515,38 @@ func (s *DingtalkMarkdownMessage) Body() ([]byte, error) {
 	return v, nil
 }
 
+type DingtalkActionCardSingleMessage struct {
+	ActionCard struct {
+		Title          string `json:"title"`
+		Text           string `json:"text"`
+		BtnOrientation string `json:"btnOrientation"`
+		SingleTitle    string `json:"singleTitle"`
+		SingleURL      string `json:"singleURL"`
+	} `json:"actionCard"`
+	Msgtype string `json:"msgtype"`
+}
+
+func (s *DingtalkActionCardSingleMessage) Body() ([]byte, error) {
+	v, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func NewDingtalkActionCardSingleMessage(title, content, singleTitle, singleURL string) *DingtalkActionCardSingleMessage {
+	msg := &DingtalkActionCardSingleMessage{}
+	msg.Msgtype = "actionCard"
+	msg.ActionCard.BtnOrientation = "0"
+	msg.ActionCard.Title = title
+	msg.ActionCard.Text = content
+	msg.ActionCard.SingleTitle = singleTitle
+	msg.ActionCard.SingleURL = singleURL
+
+	return msg
+}
+
 type DingtalkActionCardMessage struct {
 	Msgtype    string `json:"msgtype"`
 	ActionCard struct {
