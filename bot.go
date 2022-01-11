@@ -294,12 +294,12 @@ func (s *FeishuBotSender) UploadImage(filename string) (string, error) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
+	defer writer.Close()
 	part, _ := writer.CreateFormFile("image", filepath.Base(file.Name()))
 	if _, err := io.Copy(part, file); err != nil {
 		return "", err
 	}
 	writer.WriteField("image_type", "message")
-	defer writer.Close()
 
 	r, _ := http.NewRequest("POST", "https://open.feishu.cn/open-apis/im/v1/images", body)
 	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", s.TenantAccessToken))
@@ -322,22 +322,22 @@ func (s *FeishuBotSender) UploadImage(filename string) (string, error) {
 	logger.Debugf("Result: %s", string(content))
 
 	r1 := struct {
-		Errcode   int    `json:"errcode"`
-		Errmsg    string `json:"errmsg"`
-		Type      string `json:"type"`
-		MediaID   string `json:"media_id"`
-		CreatedAt string `json:"created_at"`
+		Code int `json:"code"`
+		Data struct {
+			ImageKey string `json:"image_key"`
+		} `json:"data"`
+		Msg string `json:"msg"`
 	}{}
 
 	if err = json.Unmarshal(content, &r1); err != nil {
 		return "", err
 	}
 
-	if r1.Errcode != 0 {
-		return "", errors.Errorf("Upload error: %s (%d)", r1.Errmsg, r1.Errcode)
+	if r1.Code != 0 {
+		return "", errors.Errorf("Upload error: %s (%d)", r1.Msg, r1.Code)
 	}
 
-	return r1.MediaID, nil
+	return r1.Data.ImageKey, nil
 }
 
 func (s *FeishuBotSender) Send(v BotMessage) error {
@@ -1026,11 +1026,11 @@ func (s *WxWorkBotSender) UploadMedia(filename string) (string, error) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
+	defer writer.Close()
 	part, _ := writer.CreateFormFile("file", filepath.Base(file.Name()))
 	if _, err := io.Copy(part, file); err != nil {
 		return "", err
 	}
-	defer writer.Close()
 
 	writer.WriteField("filename", fileName)
 	writer.WriteField("filelength", fmt.Sprintf("%d", fileSize))
