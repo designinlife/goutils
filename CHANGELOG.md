@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v1.0.30
+
+* HTTP 客户端默认 DisableKeepAlives 为 true 值。
+* HTTP 客户端支持 Transport 自定义传参。
+
 ## v1.0.29
 
 * 完善企业微信图片类型、文件类型消息发送。

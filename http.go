@@ -24,6 +24,7 @@ import (
 
 type HttpClient struct {
 	ProgressBar ProgressBar
+	Transport   *http.Transport
 }
 
 type ProgressBar interface {
@@ -119,6 +120,12 @@ func NewHttpClient(opts ...HttpClientOption) *HttpClient {
 func HttpClientOptionWithProgressBar(w ProgressBar) HttpClientOption {
 	return func(c *HttpClient) {
 		c.ProgressBar = w
+	}
+}
+
+func HttpClientOptionWithTransport(tr *http.Transport) HttpClientOption {
+	return func(c *HttpClient) {
+		c.Transport = tr
 	}
 }
 
@@ -281,8 +288,15 @@ func (h *HttpClient) Request(method, uri string, r *HttpRequest) (*HttpResponse,
 	}
 
 	// 创建客户端并发送请求
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	var tr *http.Transport
+
+	if h.Transport == nil {
+		tr = &http.Transport{
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+			DisableKeepAlives: true,
+		}
+	} else {
+		tr = h.Transport
 	}
 
 	if r != nil && r.Proxy != "" {
