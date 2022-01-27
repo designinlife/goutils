@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	logger "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -15,88 +16,106 @@ import (
 
 type ProcessOutLineHandle func(line string)
 
+type ProcessOption func(*SubProcess)
+
+func ProcessOptionWithTimeout(timeout time.Duration) ProcessOption {
+	return func(c *SubProcess) {
+		c.Option.Timeout = timeout
+	}
+}
+
+func ProcessOptionWithWriter(w io.Writer) ProcessOption {
+	return func(c *SubProcess) {
+		c.Option.Writer = w
+	}
+}
+
 type SubProcessOption struct {
 	Debug      bool
 	Quiet      bool
 	Timeout    time.Duration
 	HandleFunc ProcessOutLineHandle
-	ShellExec  string
+	Shell      bool
 	Env        []string
+	Writer     io.Writer
 }
 
 type SubProcess struct {
-	Option   SubProcessOption
-	Commands []string
+	Option        *SubProcessOption
+	isWindows     bool
+	shellBin      string
+	shellBinParam string
+}
+
+func DefaultSubProcessOption() *SubProcessOption {
+	opt := &SubProcessOption{
+		Debug:   false,
+		Quiet:   false,
+		Timeout: 120 * time.Second,
+		Shell:   true,
+	}
+
+	return opt
+}
+
+func NewSubProcessWithOptions(opt ...ProcessOption) *SubProcess {
+	s := &SubProcess{
+		Option:    DefaultSubProcessOption(),
+		isWindows: runtime.GOOS == "windows",
+	}
+
+	for _, op := range opt {
+		op(s)
+	}
+
+	if s.isWindows {
+		s.shellBin = "cmd.exe"
+		s.shellBinParam = "/C"
+	} else {
+		s.shellBin = "/bin/sh"
+		s.shellBinParam = "-c"
+	}
+
+	return s
 }
 
 func NewSubProcess() *SubProcess {
-	return &SubProcess{
-		Option: SubProcessOption{
-			Debug:   false,
-			Quiet:   false,
-			Timeout: 60 * time.Second,
-		},
+	s := &SubProcess{
+		Option:    DefaultSubProcessOption(),
+		isWindows: runtime.GOOS == "windows",
 	}
-}
 
-func NewSubProcessWithOption(option SubProcessOption) *SubProcess {
-	return &SubProcess{
-		Option: option,
-	}
-}
-
-func (s *SubProcess) String() string {
-	return fmt.Sprintf("Timeout: %v, Quiet: %v, Commands: %s", s.Option.Timeout, s.Option.Quiet, strings.Join(s.Commands, " && "))
-}
-
-func (s *SubProcess) AddCommand(commands ...string) *SubProcess {
-	for _, v := range commands {
-		s.Commands = append(s.Commands, v)
+	if s.isWindows {
+		s.shellBin = "cmd.exe"
+		s.shellBinParam = "/C"
+	} else {
+		s.shellBin = "/bin/sh"
+		s.shellBinParam = "-c"
 	}
 
 	return s
 }
 
-func (s *SubProcess) ClearCommand() {
-	s.Commands = nil
-}
+func (s *SubProcess) ShellExec(arg ...string) (int, error) {
+	if s.shellBin == "" || s.shellBinParam == "" {
+		return -1, errors.New("Please use NewSubProcess() or NewSubProcessWithOptions().")
+	}
 
-func (s *SubProcess) GetCommand() []string {
-	return s.Commands
-}
+	arg2 := []string{s.shellBinParam, strings.Join(arg, " && ")}
 
-func (s *SubProcess) PrintCommands() *SubProcess {
-	logger.Infof("[COMMAND] %s", strings.Join(s.Commands, " && "))
-
-	return s
+	return s.Run(s.shellBin, arg2...)
 }
 
 // Run 执行系统命令。
-func (s *SubProcess) Run() (int, error) {
-	return s.RunWithWriter(nil)
-}
-
-// RunWithWriter 执行系统命令并同时输出到 io.Writer。
-func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
-	if s.Option.Debug {
-		s.PrintCommands()
+func (s *SubProcess) Run(command string, args ...string) (int, error) {
+	if s.Option == nil {
+		s.Option = DefaultSubProcessOption()
 	}
 
-	var cmd *exec.Cmd
+	ctx, cancel := context.WithTimeout(context.Background(), s.Option.Timeout)
+	defer cancel()
 
-	execBin := "/bin/sh"
-
-	if s.Option.ShellExec != "" {
-		execBin = s.Option.ShellExec
-	}
-
-	if s.Option.Timeout > 0 {
-		ctx, cancel := context.WithTimeout(context.Background(), s.Option.Timeout)
-		defer cancel()
-		cmd = exec.CommandContext(ctx, execBin, "-c", strings.Join(s.Commands, " && "))
-	} else {
-		cmd = exec.Command(execBin, "-c", strings.Join(s.Commands, " && "))
-	}
+	cmd := exec.CommandContext(ctx, command, args...)
 
 	if s.Option.Env != nil {
 		cmd.Env = append(os.Environ(), s.Option.Env...)
@@ -113,12 +132,12 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 
 	var scanner *bufio.Scanner
 
-	if w != nil {
-		scanner = bufio.NewScanner(io.TeeReader(io.MultiReader(stdout, stderr), w))
+	if s.Option.Writer != nil {
+		scanner = bufio.NewScanner(io.TeeReader(io.MultiReader(stdout, stderr), s.Option.Writer))
 	} else {
 		scanner = bufio.NewScanner(io.MultiReader(stdout, stderr))
 	}
-	// scanner.Split(bufio.ScanWords)
+
 	for scanner.Scan() {
 		m := scanner.Text()
 
@@ -127,9 +146,11 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 		}
 
 		if !s.Option.Quiet {
-			logger.Info(m)
+			fmt.Println(strings.TrimSpace(m))
 		}
 	}
+
+	var waitStatus syscall.WaitStatus
 
 	if err := cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
@@ -139,18 +160,11 @@ func (s *SubProcess) RunWithWriter(w io.Writer) (int, error) {
 			// syscall is generally platform dependent, WaitStatus is
 			// defined for both Unix and Windows and in both cases has
 			// an ExitStatus() method with the same signature.
-			status, ok := exiterr.Sys().(syscall.WaitStatus)
-
-			if ok {
-				// logger.Printf("Exit Status: %d", status.ExitStatus())
-				return status.ExitStatus(), exiterr
-			} else {
-				return status.ExitStatus(), err
-			}
-		} else {
-			return 2, err
+			waitStatus = exiterr.Sys().(syscall.WaitStatus)
 		}
 	}
 
-	return 0, nil
+	waitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus)
+
+	return waitStatus.ExitStatus(), nil
 }
