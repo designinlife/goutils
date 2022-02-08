@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v1.0.31
+
+* 重构 SubProcess 模块。(注: 不向下兼容!)
+
 ## v1.0.30
 
 * HTTP 客户端默认 DisableKeepAlives 为 true 值。
