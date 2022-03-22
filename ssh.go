@@ -111,6 +111,8 @@ type SSHClient struct {
 	Port int
 	// SSH 登录用户名
 	User string
+	// SSH 登录密码
+	Password string
 	// 静默方式: 不输出 Stdout 信息
 	Quiet bool
 	// 是否已连接？
@@ -202,6 +204,10 @@ func newSSHClientWithProxy(proxyAddress, sshServerAddress string, sshConfig *ssh
 
 func (s *SSHClient) Connect() error {
 	if !s.Connected {
+		if s.PrivateKey == "" && s.Password == "" {
+			return errors.New("At least one of the plaintext password or RSA key must be set.")
+		}
+
 		// var hostKey ssh.PublicKey
 		var key []byte
 
@@ -218,19 +224,35 @@ func (s *SSHClient) Connect() error {
 				return errors.Wrapf(err, "Unable to read private key: %s", s.PrivateKey)
 			}
 		} else {
-			key = []byte(s.PrivateKey)
+			if s.PrivateKey != "" {
+				if len(s.PrivateKey) < 256 {
+					return errors.New("Invalid private key string.")
+				}
+
+				key = []byte(s.PrivateKey)
+			}
 		}
 
-		signer, err := ssh.ParsePrivateKey(key)
-		if err != nil {
-			return errors.Wrapf(err, "Ubable to parse private key %s", s.PrivateKey)
+		var authMethods []ssh.AuthMethod
+		var err error
+		var signer ssh.Signer
+
+		if len(key) > 0 {
+			signer, err = ssh.ParsePrivateKey(key)
+			if err != nil {
+				return errors.Wrapf(err, "Ubable to parse private key %s", s.PrivateKey)
+			}
+
+			authMethods = append(authMethods, ssh.PublicKeys(signer))
+		} else {
+			if s.Password != "" {
+				authMethods = append(authMethods, ssh.Password(s.Password))
+			}
 		}
 
 		config := &ssh.ClientConfig{
 			User: s.User,
-			Auth: []ssh.AuthMethod{
-				ssh.PublicKeys(signer),
-			},
+			Auth: authMethods,
 			// HostKeyCallback: ssh.FixedHostKey(hostKey),
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			Timeout:         s.Timeout,
