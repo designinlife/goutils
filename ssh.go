@@ -158,6 +158,12 @@ func SSHOptionWithTunnel(tunnel *SSHTunnel) SSHClientOption {
 	}
 }
 
+func SSHOptionWithPassword(password string) SSHClientOption {
+	return func(c *SSHClient) {
+		c.Password = password
+	}
+}
+
 func NewSSHClient(host string, port int, user string, privateKey string, quiet bool, opts ...SSHClientOption) *SSHClient {
 	c := &SSHClient{
 		Host:       host,
